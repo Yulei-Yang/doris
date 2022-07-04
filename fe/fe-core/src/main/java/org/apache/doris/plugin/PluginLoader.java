@@ -113,6 +113,10 @@ public abstract class PluginLoader {
 
     }
 
+    public void reload() throws IOException, UserException {
+
+    }
+
     public void pluginUninstallValid() throws UserException {
         // check plugin flags
         if (plugin != null && (plugin.flags() & Plugin.PLUGIN_NOT_DYNAMIC_UNINSTALL) > 0) {

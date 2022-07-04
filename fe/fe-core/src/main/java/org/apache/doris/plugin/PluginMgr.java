@@ -119,7 +119,10 @@ public class PluginMgr implements Writable {
             }
 
             if (checkDynamicPluginNameExist(info.getName())) {
-                throw new UserException("plugin " + info.getName() + " has already been installed.");
+                pluginLoader.reload();
+                pluginLoader.setStatus(PluginStatus.INSTALLED);
+                LOG.warn("Plugin " + info.getName() + " has already been installed, reload now.");
+                return info;
             }
 
             // install plugin
