@@ -278,3 +278,14 @@ tNEW-STRorigin str
 -- !sql --
 d***is
 
+-- !sql --
+hello
+
+-- !sql --
+hello world
+
+-- !sql --
+world
+
+-- !sql --
+hello world

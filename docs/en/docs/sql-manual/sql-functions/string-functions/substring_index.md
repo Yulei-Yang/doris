@@ -41,7 +41,7 @@ if `field` is zero, return an empty string when `content` is not null, else will
 ### example
 
 ```
-	mysql> select substring_index("hello world", " ", 1);
+mysql> select substring_index("hello world", " ", 1);
 +----------------------------------------+
 | substring_index("hello world", " ", 1) |
 +----------------------------------------+

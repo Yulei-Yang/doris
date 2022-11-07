@@ -185,6 +185,9 @@ public:
     static StringVal split_part(FunctionContext* context, const StringVal& content,
                                 const StringVal& delimiter, const IntVal& field);
 
+    static StringVal substring_index(FunctionContext* context, const StringVal& content,
+                                     const StringVal& delimiter, const IntVal& field);
+
     static StringVal replace(FunctionContext* context, const StringVal& origStr,
                              const StringVal& oldStr, const StringVal& newStr);
 

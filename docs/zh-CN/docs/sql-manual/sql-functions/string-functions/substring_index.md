@@ -40,7 +40,7 @@ delimiter 大小写敏感，且是多字节安全的。
 ### example
 
 ```
-	mysql> select substring_index("hello world", " ", 1);
+mysql> select substring_index("hello world", " ", 1);
 +----------------------------------------+
 | substring_index("hello world", " ", 1) |
 +----------------------------------------+

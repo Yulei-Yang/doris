@@ -142,4 +142,9 @@ suite("test_string_function") {
 
     qt_sql "select sub_replace(\"this is origin str\",\"NEW-STR\",1);"
     qt_sql "select sub_replace(\"doris\",\"***\",1,2);"
+
+    qt_sql "select substring_index(\"hello world\", \" \", 1);"
+    qt_sql "select substring_index(\"hello world\", \" \", 2);"
+    qt_sql "select substring_index(\"hello world\", \" \", -1);"
+    qt_sql "select substring_index(\"hello world\", \" \", -2);"
 }

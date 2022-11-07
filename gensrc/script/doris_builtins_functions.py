@@ -2201,8 +2201,8 @@ visible_functions = [
         '_ZN5doris15StringFunctions10split_partEPN9doris_udf15FunctionContextERKNS1_9StringValES6_RKNS1_6IntValE',
         '', '', 'vec', 'ALWAYS_NULLABLE'],
     [['substring_index'], 'VARCHAR', ['VARCHAR', 'VARCHAR', 'INT'],
-        '_ZN5doris15StringFunctions15substring_indexEPN9doris_udf15FunctionContextERKNS1_9StringValES6_RKNS1_6IntValE',
-        '', '', 'vec', 'ALWAYS_NULLABLE'],
+        '_ZN5doris15StringFunctions15substring_indexEPN9doris_udf15FunctionContextERKNS1_9StringValES6_RKNS1_6IntValE', 
+	'', '', 'vec', 'ALWAYS_NULLABLE'],
     [['extract_url_parameter'], 'VARCHAR', ['VARCHAR', 'VARCHAR'],'','', '', 'vec', ''],
 
     [['sub_replace'], 'VARCHAR', ['VARCHAR', 'VARCHAR', 'INT'],'','', '', 'vec', 'ALWAYS_NULLABLE'],
@@ -2336,7 +2336,7 @@ visible_functions = [
         '', '', 'vec', 'ALWAYS_NULLABLE'],
     [['substring_index'], 'STRING', ['STRING', 'STRING', 'INT'],
         '_ZN5doris15StringFunctions15substring_indexEPN9doris_udf15FunctionContextERKNS1_9StringValES6_RKNS1_6IntValE',
-        '', '', 'vec', 'ALWAYS_NULLABLE'],
+	 '', '', 'vec', 'ALWAYS_NULLABLE'],
        
     # Utility functions
     [['sleep'], 'BOOLEAN', ['INT'],

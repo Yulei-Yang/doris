@@ -1267,7 +1267,7 @@ public:
         auto& part_num_col_data = part_num_col->get_data();
 
         for (size_t i = 0; i < input_rows_count; ++i) {
-            if (part_num_col_data[i] <= 0) {
+            if (part_num_col_data[i] == 0) {
                 StringOP::push_null_string(i, res_chars, res_offsets, null_map_data);
                 continue;
             }
@@ -1278,63 +1278,195 @@ public:
             auto str = str_col->get_data_at(i);
             if (delimiter.size == 0) {
                 StringOP::push_empty_string(i, res_chars, res_offsets);
-            } else if (delimiter.size == 1) {
-                // If delimiter is a char, use memchr to split
-                int32_t pre_offset = -1;
-                int32_t offset = -1;
-                int32_t num = 0;
-                while (num < part_number) {
-                    pre_offset = offset;
-                    size_t n = str.size - offset - 1;
-                    const char* pos = reinterpret_cast<const char*>(
-                            memchr(str.data + offset + 1, delimiter_str[0], n));
-                    if (pos != nullptr) {
-                        offset = pos - str.data;
-                        num++;
-                    } else {
-                        offset = str.size;
-                        num = (num == 0) ? 0 : num + 1;
-                        break;
-                    }
-                }
-
-                if (num == part_number) {
-                    StringOP::push_value_string(
-                            std::string_view {
-                                    reinterpret_cast<const char*>(str.data + pre_offset + 1),
-                                    (size_t)offset - pre_offset - 1},
-                            i, res_chars, res_offsets);
-                } else {
-                    StringOP::push_null_string(i, res_chars, res_offsets, null_map_data);
-                }
             } else {
-                // If delimiter is a string, use memmem to split
-                int32_t pre_offset = -delimiter.size;
                 int32_t offset = -delimiter.size;
-                int32_t num = 0;
-                while (num < part_number) {
-                    pre_offset = offset;
-                    size_t n = str.size - offset - delimiter.size;
-                    char* pos = reinterpret_cast<char*>(memmem(str.data + offset + delimiter.size,
+                int32_t num = 0; //substring count of content splitted by delimiter
+                std::vector<int> find(str.size, -1); //store delimiter position
+
+                // If delimiter is a char, use memchr to split
+                if (delimiter.size == 1) {
+                    while (num < str.size) {
+                        size_t n = str.size - offset - 1;
+                        const char* pos = reinterpret_cast<const char*>(
+                                memchr(str.data + offset + 1, delimiter_str[0], n));
+                        if (pos != nullptr) {
+                            offset = pos - str.data;
+                            find[num] = offset;
+                            num++;
+                        } else {
+                            offset = str.size;
+                            num = (num == 0) ? 0 : num + 1;
+                            break;
+                        }
+                    }
+                } else {
+                    // If delimiter is a string, use memmem to split
+                    while (num < str.size) {
+                        size_t n = str.size - offset - delimiter.size;
+                        char* pos =
+                                reinterpret_cast<char*>(memmem(str.data + offset + delimiter.size,
                                                                n, delimiter.data, delimiter.size));
-                    if (pos != nullptr) {
-                        offset = pos - str.data;
-                        num++;
-                    } else {
-                        offset = str.size;
-                        num = (num == 0) ? 0 : num + 1;
-                        break;
+                        if (pos != nullptr) {
+                            offset = pos - str.data;
+                            find[num] = offset;
+                            num++;
+                        } else {
+                            offset = str.size;
+                            num = (num == 0) ? 0 : num + 1;
+                            break;
+                        }
                     }
                 }
 
-                if (num == part_number) {
-                    StringOP::push_value_string(
-                            std::string_view {reinterpret_cast<const char*>(str.data + pre_offset +
-                                                                            delimiter.size),
-                                              (size_t)offset - pre_offset - delimiter.size},
-                            i, res_chars, res_offsets);
-                } else {
+                // if part_number is negative, convert it to forward direction value
+                int32_t new_part_num = (part_number < 0) ? part_number + num + 1 : part_number;
+
+                // if field not find or field is over-long, then return null
+                if (num == 0 || new_part_num <= 0 || new_part_num > num) {
                     StringOP::push_null_string(i, res_chars, res_offsets, null_map_data);
+                } else {
+                    int32_t start_pos =
+                            (new_part_num == 1) ? 0 : find[new_part_num - 2] + delimiter.size;
+                    int32_t len =
+                            (find[new_part_num - 1] == -1 ? str.size : find[new_part_num - 1]) -
+                            start_pos;
+                    StringOP::push_value_string(
+                            std::string_view {reinterpret_cast<const char*>(str.data + start_pos),
+                                              (size_t)len},
+                            i, res_chars, res_offsets);
+                }
+            }
+        }
+        block.get_by_position(result).column =
+                ColumnNullable::create(std::move(res), std::move(null_map));
+        return Status::OK();
+    }
+};
+
+class FunctionSubstringIndex : public IFunction {
+public:
+    static constexpr auto name = "substring_index";
+    static FunctionPtr create() { return std::make_shared<FunctionSubstringIndex>(); }
+    String get_name() const override { return name; }
+    size_t get_number_of_arguments() const override { return 3; }
+
+    DataTypePtr get_return_type_impl(const DataTypes& arguments) const override {
+        return make_nullable(std::make_shared<DataTypeString>());
+    }
+
+    bool use_default_implementation_for_nulls() const override { return false; }
+    bool use_default_implementation_for_constants() const override { return true; }
+
+    Status execute_impl(FunctionContext* context, Block& block, const ColumnNumbers& arguments,
+                        size_t result, size_t input_rows_count) override {
+        DCHECK_EQ(arguments.size(), 3);
+
+        auto null_map = ColumnUInt8::create(input_rows_count, 0);
+        // Create a zero column to simply implement
+        auto const_null_map = ColumnUInt8::create(input_rows_count, 0);
+        auto res = ColumnString::create();
+
+        auto& res_offsets = res->get_offsets();
+        auto& res_chars = res->get_chars();
+        res_offsets.resize(input_rows_count);
+
+        size_t argument_size = arguments.size();
+        ColumnPtr argument_columns[argument_size];
+        for (size_t i = 0; i < argument_size; ++i) {
+            argument_columns[i] =
+                    block.get_by_position(arguments[i]).column->convert_to_full_column_if_const();
+            if (auto* nullable = check_and_get_column<const ColumnNullable>(*argument_columns[i])) {
+                // Danger: Here must dispose the null map data first! Because
+                // argument_columns[i]=nullable->get_nested_column_ptr(); will release the mem
+                // of column nullable mem of null map
+                VectorizedUtils::update_null_map(null_map->get_data(),
+                                                 nullable->get_null_map_data());
+                argument_columns[i] = nullable->get_nested_column_ptr();
+            }
+        }
+
+        auto str_col = assert_cast<const ColumnString*>(argument_columns[0].get());
+
+        auto delimiter_col = assert_cast<const ColumnString*>(argument_columns[1].get());
+
+        auto part_num_col = assert_cast<const ColumnInt32*>(argument_columns[2].get());
+        auto& part_num_col_data = part_num_col->get_data();
+
+        for (size_t i = 0; i < input_rows_count; ++i) {
+            if (part_num_col_data[i] == 0) {
+                StringOP::push_empty_string(i, res_chars, res_offsets);
+                continue;
+            }
+
+            auto delimiter = delimiter_col->get_data_at(i);
+            auto delimiter_str = delimiter_col->get_data_at(i).to_string();
+            auto part_number = part_num_col_data[i];
+            auto str = str_col->get_data_at(i);
+            if (delimiter.size == 0 || part_number == 0) {
+                StringOP::push_empty_string(i, res_chars, res_offsets);
+            } else {
+                int32_t offset = -delimiter.size;
+                int32_t num = 0; //substring count of content splitted by delimiter
+                std::vector<int32_t> find(str.size, -1); //store delimiter position
+
+                // If delimiter is a char, use memchr to split
+                if (delimiter.size == 1) {
+                    while (num < str.size) {
+                        size_t n = str.size - offset - 1;
+                        const char* pos = reinterpret_cast<const char*>(
+                                memchr(str.data + offset + 1, delimiter_str[0], n));
+                        if (pos != nullptr) {
+                            offset = pos - str.data;
+                            find[num] = offset;
+                            num++;
+                        } else {
+                            offset = str.size;
+                            num = (num == 0) ? 0 : num + 1;
+                            break;
+                        }
+                    }
+                } else {
+                    // If delimiter is a string, use memmem to split
+                    while (num < str.size) {
+                        size_t n = str.size - offset - delimiter.size;
+                        char* pos =
+                                reinterpret_cast<char*>(memmem(str.data + offset + delimiter.size,
+                                                               n, delimiter.data, delimiter.size));
+                        if (pos != nullptr) {
+                            offset = pos - str.data;
+                            find[num] = offset;
+                            num++;
+                        } else {
+                            offset = str.size;
+                            num = (num == 0) ? 0 : num + 1;
+                            break;
+                        }
+                    }
+                }
+
+                // if part_number is negative, convert it to forward direction value
+                int32_t new_part_num = (part_number < 0) ? part_number + num + 1 : part_number;
+
+                // if field not find or field is over-long, then return null
+                if (num == 0 || part_number >= num || (part_number < 0 && new_part_num <= 1)) {
+                    StringOP::push_value_string(
+                            {reinterpret_cast<const char*>(str.data), (size_t)str.size}, i,
+                            res_chars, res_offsets);
+                } else {
+                    int32_t start_pos;
+                    int32_t len;
+                    if (part_number > 0) {
+                        start_pos = 0;
+                        len = find[new_part_num - 1];
+                    } else {
+                        start_pos = find[new_part_num - 2] + delimiter.size;
+                        len = str.size - start_pos;
+                    }
+
+                    StringOP::push_value_string(
+                            std::string_view {reinterpret_cast<const char*>(str.data + start_pos),
+                                              (size_t)len},
+                            i, res_chars, res_offsets);
                 }
             }
         }

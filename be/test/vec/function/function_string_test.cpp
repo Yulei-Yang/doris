@@ -583,7 +583,46 @@ TEST(function_string_test, function_string_splitpart_test) {
             {{Null(), std::string("__"), 1}, Null()},
             {{std::string("prefix_string"), Null(), 1}, Null()},
             {{std::string("prefix_string"), std::string("__"), Null()}, Null()},
-            {{std::string("prefix_string"), std::string("__"), -1}, Null()}};
+            {{std::string("prefix_string"), std::string("_"), Null()}, Null()},
+            {{std::string("prefix_string"), std::string("__"), -1}, Null()},
+            {{std::string("prefix_string1"), std::string("_"), -1}, std::string("string1")},
+            {{std::string("prefix_string1"), std::string("_"), -2}, std::string("prefix")},
+            {{std::string("prefix_string1"), std::string("_"), -3}, Null()},
+            {{std::string("abc###123###234"), std::string("##"), -1}, std::string("#234")},
+            {{std::string("abc###123###234"), std::string("##"), -2}, std::string("#123")},
+            {{std::string("abc###123###234"), std::string("##"), -3}, std::string("abc")},
+            {{std::string("abc###123###234"), std::string("##"), -4}, Null()}};
+
+    check_function<DataTypeString, true>(func_name, input_types, data_set);
+}
+
+TEST(function_string_test, function_string_substring_index_test) {
+    std::string func_name = "substring_index";
+    InputTypeSet input_types = {TypeIndex::String, TypeIndex::String, TypeIndex::Int32};
+
+    DataSet data_set = {
+            {{std::string("prefix_string1"), std::string("_"), 1}, std::string("prefix")},
+            {{std::string("prefix_string1"), std::string("_"), 2}, std::string("prefix_string1")},
+            {{std::string("prefix_string1"), std::string("_"), 3}, std::string("prefix_string1")},
+            {{std::string("prefix_string1"), std::string("_"), 0}, std::string("")},
+            {{std::string("prefix__string2"), std::string("__"), 2},
+             std::string("prefix__string2")},
+            {{std::string("prefix__string2"), std::string("_"), 2}, std::string("prefix_")},
+            {{std::string("prefix_string2"), std::string("__"), 1}, std::string("prefix_string2")},
+            {{Null(), std::string("__"), 1}, Null()},
+            {{std::string("prefix_string"), Null(), 1}, Null()},
+            {{std::string("prefix_string"), std::string("__"), Null()}, Null()},
+            {{std::string("prefix_string"), std::string("_"), Null()}, Null()},
+            {{std::string("prefix_string"), std::string("__"), -1}, std::string("prefix_string")},
+            {{std::string("prefix_string1"), std::string("_"), -1}, std::string("string1")},
+            {{std::string("prefix_string1"), std::string("_"), -2}, std::string("prefix_string1")},
+            {{std::string("prefix_string1"), std::string("_"), -3}, std::string("prefix_string1")},
+            {{std::string("2019年9月8日"), std::string("月"), -1}, std::string("8日")},
+            {{std::string("2019年9月8日"), std::string("月"), -2}, std::string("2019年9月8日")},
+            {{std::string("2019年9月8日"), std::string("月"), -3}, std::string("2019年9月8日")},
+            {{std::string("2019年9月8日"), std::string("月"), 1}, std::string("2019年9")},
+            {{std::string("2019年9月8日"), std::string("月"), 2}, std::string("2019年9月8日")},
+            {{std::string("2019年9月8日"), std::string("月"), 3}, std::string("2019年9月8日")}};
 
     check_function<DataTypeString, true>(func_name, input_types, data_set);
 }
