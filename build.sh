@@ -25,6 +25,7 @@
 # compiled and installed correctly.
 ##############################################################
 
+sh output/fe/bin/stop_fe.sh
 set -eo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
@@ -599,4 +600,6 @@ if [[ -n "${DORIS_POST_BUILD_HOOK}" ]]; then
     eval "${DORIS_POST_BUILD_HOOK}"
 fi
 
+cp chdfs_hadoop_plugin_network-3.0.jar hadoop-lzo-0.4.21-SNAPSHOT.jar output/fe/lib/
+sh output/fe/bin/start_fe.sh --daemon
 exit 0

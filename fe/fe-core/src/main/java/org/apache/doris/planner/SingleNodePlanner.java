@@ -910,7 +910,7 @@ public class SingleNodePlanner {
     }
 
     boolean candidateCardinalityIsSmaller(PlanNode candidate, long candidateInnerNodeCardinality,
-                                          PlanNode newRoot, long newRootInnerNodeCardinality) {
+            PlanNode newRoot, long newRootInnerNodeCardinality) {
         if (candidate.getCardinality() < newRoot.getCardinality()) {
             return true;
         } else if (candidate.getCardinality() == newRoot.getCardinality()) {
@@ -932,7 +932,7 @@ public class SingleNodePlanner {
      */
     // (ML): change the function name
     private PlanNode createJoinPlan(Analyzer analyzer,
-                                    TableRef leftmostRef, List<Pair<TableRef, PlanNode>> refPlans)
+            TableRef leftmostRef, List<Pair<TableRef, PlanNode>> refPlans)
             throws UserException {
         LOG.debug("Try to create a query plan starting with " + leftmostRef.getUniqueAlias());
 
@@ -1053,8 +1053,8 @@ public class SingleNodePlanner {
                 if (newRoot == null
                         || ((candidate.getClass().equals(newRoot.getClass())
                         && candidateCardinalityIsSmaller(
-                                candidate, tblRefToPlanNodeOfCandidate.second.getCardinality(),
-                                newRoot, newRootRightChildCardinality)))
+                        candidate, tblRefToPlanNodeOfCandidate.second.getCardinality(),
+                        newRoot, newRootRightChildCardinality)))
                         || (candidate instanceof HashJoinNode && newRoot instanceof NestedLoopJoinNode)) {
                     newRoot = candidate;
                     minEntry = tblRefToPlanNodeOfCandidate;
@@ -1277,7 +1277,7 @@ public class SingleNodePlanner {
      * Returns a new RepeatNode.
      */
     private PlanNode createRepeatNodePlan(SelectStmt selectStmt, Analyzer analyzer,
-                                          PlanNode root) throws UserException {
+            PlanNode root) throws UserException {
         GroupByClause groupByClause = selectStmt.getGroupByClause();
         GroupingInfo groupingInfo = selectStmt.getGroupingInfo();
         Preconditions.checkState(groupByClause != null && groupByClause.isGroupByExtension()
@@ -1346,7 +1346,7 @@ public class SingleNodePlanner {
      * Assigns conjuncts from the Having clause to the returned node.
      */
     private PlanNode createAggregationPlan(SelectStmt selectStmt, Analyzer analyzer,
-                                           PlanNode root) throws UserException {
+            PlanNode root) throws UserException {
         Preconditions.checkState(selectStmt.getAggInfo() != null);
         // add aggregation, if required
         AggregateInfo aggInfo = selectStmt.getAggInfo();
@@ -1407,7 +1407,7 @@ public class SingleNodePlanner {
      * slot per result expr.
      */
     private TupleDescriptor createResultTupleDescriptor(SelectStmt selectStmt,
-                                                        String debugName, Analyzer analyzer) {
+            String debugName, Analyzer analyzer) {
         TupleDescriptor tupleDesc = analyzer.getDescTbl().createTupleDescriptor(
                 debugName);
         tupleDesc.setIsMaterialized(true);
@@ -1571,10 +1571,10 @@ public class SingleNodePlanner {
                     List<Expr> nullableRhs;
                     if (analyzer.isOuterJoinedLeftSide(inlineViewRef.getId())) {
                         nullableRhs = TupleIsNullPredicate.wrapExprs(inlineViewRef.getSmap().getRhs(),
-                            unionNode.getTupleIds(), TNullSide.LEFT, analyzer);
+                                unionNode.getTupleIds(), TNullSide.LEFT, analyzer);
                     } else {
                         nullableRhs = TupleIsNullPredicate.wrapExprs(inlineViewRef.getSmap().getRhs(),
-                            unionNode.getTupleIds(), TNullSide.RIGHT, analyzer);
+                                unionNode.getTupleIds(), TNullSide.RIGHT, analyzer);
                     }
                     unionNode.setOutputSmap(new ExprSubstitutionMap(inlineViewRef.getSmap().getLhs(), nullableRhs));
                 }
@@ -1658,7 +1658,7 @@ public class SingleNodePlanner {
      * filters from the enclosing scope can be safely applied (to the grouping cols, say).
      */
     public void migrateConjunctsToInlineView(Analyzer analyzer,
-                                             InlineViewRef inlineViewRef) throws AnalysisException {
+            InlineViewRef inlineViewRef) throws AnalysisException {
         // All conjuncts
         final List<Expr> unassignedConjuncts =
                 analyzer.getUnassignedConjuncts(inlineViewRef.getId().asList(), true);
@@ -1947,7 +1947,19 @@ public class SingleNodePlanner {
                 scanNode = ((TableValuedFunctionRef) tblRef).getScanNode(ctx.getNextNodeId());
                 break;
             case HMS_EXTERNAL_TABLE:
+                // [LzoCodec.<clinit>():78] Failed to load/initialize native-lzo library
+                // Unknown file location ofs://
                 scanNode = new ExternalFileScanNode(ctx.getNextNodeId(), tblRef.getDesc());
+
+                //Unexpected exception: org.apache.doris.catalog.external.HMSExternalTable cannot be cast to
+                // org.apache.doris.catalog.BrokerTable  -- BrokerScanNode.initFileGroup()
+                // scanNode = new BrokerScanNode(ctx.getNextNodeId(), tblRef.getDesc(), "BrokerScanNode",
+                //     null, -1);
+
+                // Unexpected exception: org.apache.doris.catalog.external.HMSExternalTable cannot be cast to
+                // org.apache.doris.catalog.HiveTable
+                // scanNode = new HiveScanNode(ctx.getNextNodeId(), tblRef.getDesc(), "HiveScanNode",
+                //        null, -1);
                 break;
             case ES_EXTERNAL_TABLE:
                 scanNode = new EsScanNode(ctx.getNextNodeId(), tblRef.getDesc(), "EsScanNode", true);
@@ -1982,8 +1994,8 @@ public class SingleNodePlanner {
      * inner joins, but only from the JOIN clause Returns the original form in 'joinPredicates'.
      */
     private void getHashLookupJoinConjuncts(Analyzer analyzer, PlanNode left, PlanNode right,
-                                            List<Expr> joinConjuncts,
-                                            Reference<String> errMsg, JoinOperator op) {
+            List<Expr> joinConjuncts,
+            Reference<String> errMsg, JoinOperator op) {
         joinConjuncts.clear();
         final List<TupleId> lhsIds = left.getTblRefIds();
         final List<TupleId> rhsIds = right.getTblRefIds();
@@ -2095,7 +2107,7 @@ public class SingleNodePlanner {
      * Throws if the JoinNode.init() fails.
      */
     private PlanNode createJoinNode(Analyzer analyzer, PlanNode outer, TableRef innerRef,
-                                    SelectStmt selectStmt) throws UserException {
+            SelectStmt selectStmt) throws UserException {
         // the rows coming from the build node only need to have space for the tuple
         // materialized by that node
         PlanNode inner = createTableRefNode(analyzer, innerRef, selectStmt);
@@ -2134,7 +2146,7 @@ public class SingleNodePlanner {
     }
 
     private PlanNode createTableFunctionNode(Analyzer analyzer, PlanNode inputNode,
-                                              List<LateralViewRef> lateralViewRefs, SelectStmt selectStmt)
+            List<LateralViewRef> lateralViewRefs, SelectStmt selectStmt)
             throws UserException {
         Preconditions.checkNotNull(lateralViewRefs);
         Preconditions.checkState(lateralViewRefs.size() > 0);
@@ -2351,8 +2363,8 @@ public class SingleNodePlanner {
     // notice that when query is a union b the union operation is in right-hand child(b),
     // while the left-hand child(a)'s operation is null
     private PlanNode createUnionPartialSetOperationPlan(Analyzer analyzer, SetOperationStmt setOperationStmt,
-                                                        List<SetOperationStmt.SetOperand> setOperands,
-                                                        PlanNode result, long defaultOrderByLimit)
+            List<SetOperationStmt.SetOperand> setOperands,
+            PlanNode result, long defaultOrderByLimit)
             throws UserException {
         boolean hasDistinctOps = false;
         boolean hasAllOps = false;
@@ -2385,7 +2397,7 @@ public class SingleNodePlanner {
     }
 
     private PlanNode createAssertRowCountNode(PlanNode input, AssertNumRowsElement assertNumRowsElement,
-                                              Analyzer analyzer) throws UserException {
+            Analyzer analyzer) throws UserException {
         AssertNumRowsNode root = new AssertNumRowsNode(ctx.getNextNodeId(), input, assertNumRowsElement);
         root.init(analyzer);
         return root;
@@ -2457,8 +2469,8 @@ public class SingleNodePlanner {
      * Columns: k1 tinyint, k2 bigint, k3 double
      * Input: tmp, analyzer
      * Output:
-     *   Materialized slot: k1 true, k2 false, k3 false
-     *   Materialized tuple: base
+     * Materialized slot: k1 true, k2 false, k3 false
+     * Materialized tuple: base
      *
      * @param inlineView
      * @param analyzer
@@ -2580,8 +2592,8 @@ public class SingleNodePlanner {
      * @param analyzer current statement's analyzer
      * @param stmt current stmt
      * @param targetTupleIds target tuple to register.
-     *                      Table tuple ids when process first phase agg.
-     *                      First aggregate's tuple id when process second phase agg.
+     * Table tuple ids when process first phase agg.
+     * First aggregate's tuple id when process second phase agg.
      * @throws AnalysisException throw exception when register predicate to tuple failed
      */
     private void pushDownPredicatesPastAggregationOnePhase(AggregateInfo aggregateInfo,
@@ -2716,7 +2728,7 @@ public class SingleNodePlanner {
 
     // Register predicates with Aggregation's output tuple id.
     private boolean putPredicatesOnAggregation(SelectStmt stmt, Analyzer analyzer,
-                                               List<Expr> predicates) throws AnalysisException {
+            List<Expr> predicates) throws AnalysisException {
         final AggregateInfo aggregateInfo = stmt.getAggInfo();
         if (aggregateInfo != null) {
             analyzer.registerConjuncts(predicates, aggregateInfo.getOutputTupleId());
@@ -2727,7 +2739,7 @@ public class SingleNodePlanner {
 
     // Register predicates with Windows's tuple id.
     private boolean putPredicatesOnWindows(SelectStmt stmt, Analyzer analyzer,
-                                           List<Expr> predicates) throws AnalysisException {
+            List<Expr> predicates) throws AnalysisException {
         final AnalyticInfo analyticInfo = stmt.getAnalyticInfo();
         if (analyticInfo != null) {
             analyzer.registerConjuncts(predicates, analyticInfo.getOutputTupleId());
@@ -2783,7 +2795,7 @@ public class SingleNodePlanner {
      * to ensure that the order of expr is consistent with the order of node
      */
     public static BinaryPredicate getNormalizedEqPred(Expr expr, List<TupleId> lhsTids,
-                                                      List<TupleId> rhsTids, Analyzer analyzer) {
+            List<TupleId> rhsTids, Analyzer analyzer) {
         if (!(expr instanceof BinaryPredicate)) {
             return null;
         }

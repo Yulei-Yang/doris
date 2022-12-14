@@ -53,7 +53,8 @@ public abstract class BlobStorage implements Writable {
         } else if (type == StorageBackend.StorageType.HDFS) {
             return new HdfsStorage(properties);
         } else if (type == StorageBackend.StorageType.BROKER) {
-            return new BrokerStorage(name, properties);
+            //return new BrokerStorage(name, properties);
+            return new HdfsStorage(properties);
         } else {
             throw new UnsupportedOperationException(type.toString() + "backend is not implemented");
         }

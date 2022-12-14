@@ -72,6 +72,9 @@ public class HdfsStorage extends BlobStorage {
      */
     public HdfsStorage(Map<String, String> properties) {
         caseInsensitiveProperties = new CaseInsensitiveMap();
+        caseInsensitiveProperties.put("fs.defaultFS", "ofs://yulei-chdfs-1301087413");
+        caseInsensitiveProperties.put("hadoop.username", "hadoop");
+
         setProperties(properties);
         setType(StorageBackend.StorageType.HDFS);
         setName(StorageBackend.StorageType.HDFS.name());

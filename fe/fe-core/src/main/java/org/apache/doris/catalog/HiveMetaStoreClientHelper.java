@@ -231,7 +231,7 @@ public class HiveMetaStoreClientHelper {
                     // eg: /home/work/dev/hive/apache-hive-2.3.7-bin/data/warehouse
                     //     + /dae.db/customer/state=CA/city=SanJose/000000_0
                     String path = fileStatus.getPath().toUri().getPath();
-                    if (onS3) {
+                    if (onS3 || fileStatus.getPath().toString().startsWith("ofs://")) {
                         // Backend need full s3 path (with s3://bucket at the beginning) to read the data on s3.
                         // path = "s3://bucket/path/to/partition/file_name"
                         // eg: s3://hive-s3-test/region/region.tbl

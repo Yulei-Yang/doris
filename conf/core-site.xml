@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<configuration>
+
+    <property>
+        <name>delegation.token.identifier.serialization.version</name>
+        <value>0</value>
+    </property>
+
+    <property>
+        <name>delegation.token.identifier.transmission.version</name>
+        <value>0</value>
+    </property>
+
+    <property>
+        <name>emr.cfs.group.id.map</name>
+        <value>root:0;hadoop:500</value>
+    </property>
+
+    <property>
+        <name>emr.cfs.io.blocksize</name>
+        <value>1048576</value>
+    </property>
+
+    <property>
+        <name>emr.cfs.user.id.map</name>
+        <value>root:0;hadoop:500</value>
+    </property>
+
+    <property>
+        <name>emr.cfs.write.level</name>
+        <value>2</value>
+    </property>
+
+    <property>
+        <name>emr.temrfs.download.md5</name>
+        <value>02a3b2e1b40e17e138001e9ba6a9b9c3</value>
+    </property>
+
+    <property>
+        <name>emr.temrfs.download.region</name>
+        <value>bj</value>
+    </property>
+
+    <property>
+        <name>emr.temrfs.download.version</name>
+        <value>2.8.5-8.1.4-1.0.6</value>
+    </property>
+
+    <property>
+        <name>emr.temrfs.tmp.cache.dir</name>
+        <value>/data/emr/hdfs/tmp/temrfs</value>
+    </property>
+
+    <property>
+        <name>fs.AbstractFileSystem.ofs.impl</name>
+        <value>com.qcloud.chdfs.fs.CHDFSDelegateFSAdapter</value>
+    </property>
+
+    <property>
+        <name>fs.cfs.impl</name>
+        <value>com.tencent.cloud.emr.CFSFileSystem</value>
+    </property>
+
+    <property>
+        <name>fs.cos.buffer.dir</name>
+        <value>/data/emr/hdfs/tmp</value>
+    </property>
+
+    <property>
+        <name>fs.cos.local_block_size</name>
+        <value>2097152</value>
+    </property>
+
+    <property>
+        <name>fs.cos.userinfo.appid</name>
+        <value>1301087413</value>
+    </property>
+
+    <property>
+        <name>fs.cos.userinfo.region</name>
+        <value>bj</value>
+    </property>
+
+    <property>
+        <name>fs.cos.userinfo.useCDN</name>
+        <value>false</value>
+    </property>
+
+    <property>
+        <name>fs.cosn.block.size</name>
+        <value>67108864</value>
+    </property>
+
+    <property>
+        <name>fs.cosn.credentials.provider</name>
+        <value>org.apache.hadoop.fs.auth.EMRInstanceCredentialsProvider</value>
+    </property>
+
+    <property>
+        <name>fs.cosn.emrv2.instance.provider.enabled</name>
+        <value>true</value>
+    </property>
+
+    <property>
+        <name>fs.cosn.impl</name>
+        <value>com.qcloud.emr.fs.TemrfsHadoopFileSystemAdapter</value>
+    </property>
+
+    <property>
+        <name>fs.cosn.local_block_size</name>
+        <value>2097152</value>
+    </property>
+
+    <property>
+        <name>fs.cosn.posix_bucket.fs.impl</name>
+        <value>com.qcloud.chdfs.fs.CHDFSHadoopFileSystemAdapter</value>
+    </property>
+
+    <property>
+        <name>fs.cosn.tmp.dir</name>
+        <value>/data/emr/hdfs/tmp/hadoop_cos</value>
+    </property>
+
+    <property>
+        <name>fs.cosn.trsf.fs.AbstractFileSystem.ofs.impl</name>
+        <value>com.qcloud.chdfs.fs.CHDFSDelegateFSAdapter</value>
+    </property>
+
+    <property>
+        <name>fs.cosn.trsf.fs.ofs.bucket.region</name>
+        <value>ap-beijing</value>
+    </property>
+
+    <property>
+        <name>fs.cosn.trsf.fs.ofs.impl</name>
+        <value>com.qcloud.chdfs.fs.CHDFSHadoopFileSystemAdapter</value>
+    </property>
+
+    <property>
+        <name>fs.cosn.trsf.fs.ofs.tmp.cache.dir</name>
+        <value>/data/emr/hdfs/tmp/posix</value>
+    </property>
+
+    <property>
+        <name>fs.cosn.trsf.fs.ofs.user.appid</name>
+        <value>1301087413</value>
+    </property>
+
+    <property>
+        <name>fs.cosn.upload.buffer</name>
+        <value>mapped_disk</value>
+    </property>
+
+    <property>
+        <name>fs.cosn.upload.buffer.size</name>
+        <value>-1</value>
+    </property>
+
+    <property>
+        <name>fs.cosn.userinfo.region</name>
+        <value>ap-beijing</value>
+    </property>
+
+    <property>
+        <name>fs.defaultFS</name>
+        <value>hdfs://HDFS8000982</value>
+    </property>
+
+    <property>
+        <name>fs.emr.version</name>
+        <value>9c06b7b</value>
+    </property>
+
+    <property>
+        <name>fs.ofs.bucket.region</name>
+        <value>ap-beijing</value>
+    </property>
+
+    <property>
+        <name>fs.ofs.impl</name>
+        <value>com.qcloud.chdfs.fs.CHDFSHadoopFileSystemAdapter</value>
+    </property>
+
+    <property>
+        <name>fs.ofs.tmp.cache.dir</name>
+        <value>/data/emr/hdfs/tmp/chdfs</value>
+    </property>
+
+    <property>
+        <name>fs.ofs.user.appid</name>
+        <value>1301087413</value>
+    </property>
+
+    <property>
+        <name>fs.trash.interval</name>
+        <value>1440</value>
+    </property>
+
+    <property>
+        <name>ha.health-monitor.rpc-timeout.ms</name>
+        <value>180000</value>
+    </property>
+
+    <property>
+        <name>ha.zookeeper.session-timeout.ms</name>
+        <value>180000</value>
+    </property>
+
+    <property>
+        <name>hadoop.http.staticuser.user</name>
+        <value>hadoop</value>
+    </property>
+
+    <property>
+        <name>hadoop.logfile.count</name>
+        <value>20</value>
+    </property>
+
+    <property>
+        <name>hadoop.logfile.size</name>
+        <value>1000000000</value>
+    </property>
+
+    <property>
+        <name>hadoop.proxyuser.hadoop.groups</name>
+        <value>*</value>
+    </property>
+
+    <property>
+        <name>hadoop.proxyuser.hadoop.hosts</name>
+        <value>*</value>
+    </property>
+
+    <property>
+        <name>hadoop.tmp.dir</name>
+        <value>/data/emr/hdfs/tmp</value>
+    </property>
+
+    <property>
+        <name>io.compression.codec.lzo.class</name>
+        <value>com.hadoop.compression.lzo.LzoCodec</value>
+    </property>
+
+    <property>
+        <name>io.compression.codecs</name>
+        <value>org.apache.hadoop.io.compress.DefaultCodec,org.apache.hadoop.io.compress.GzipCodec,com.hadoop.compression.lzo.LzoCodec,com.hadoop.compression.lzo.LzopCodec,org.apache.hadoop.io.compress.SnappyCodec</value>
+    </property>
+
+    <property>
+        <name>mapreduce.jobhistory.local.enable</name>
+        <value>false</value>
+    </property>
+
+    <property>
+        <name>tq.hdfs.union.token.enable</name>
+        <value>false</value>
+    </property>
+
+    <property>
+        <name>yarn.nodemanager.emc.enable</name>
+        <value>false</value>
+    </property>
+
+</configuration>

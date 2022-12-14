@@ -21,6 +21,7 @@ import org.apache.doris.analysis.Analyzer;
 import org.apache.doris.analysis.BrokerDesc;
 import org.apache.doris.analysis.ImportColumnDesc;
 import org.apache.doris.analysis.StorageBackend;
+import org.apache.doris.analysis.StorageBackend.StorageType;
 import org.apache.doris.analysis.TupleDescriptor;
 import org.apache.doris.catalog.HMSResource;
 import org.apache.doris.catalog.HiveMetaStoreClientHelper;
@@ -97,7 +98,7 @@ public class HiveScanNode extends BrokerScanNode {
     }
 
     public HiveScanNode(PlanNodeId id, TupleDescriptor destTupleDesc, String planNodeName,
-                        List<List<TBrokerFileStatus>> fileStatusesList, int filesAdded) {
+            List<List<TBrokerFileStatus>> fileStatusesList, int filesAdded) {
         super(id, destTupleDesc, planNodeName, fileStatusesList, filesAdded, StatisticalType.HIVE_SCAN_NODE);
         this.hiveTable = (HiveTable) destTupleDesc.getTable();
     }
@@ -132,9 +133,13 @@ public class HiveScanNode extends BrokerScanNode {
             this.storageType = StorageBackend.StorageType.S3;
         } else if (storagePrefix.equalsIgnoreCase("hdfs")) {
             this.storageType = StorageBackend.StorageType.HDFS;
+        } else if (storagePrefix.equalsIgnoreCase("ofs")
+                || storagePrefix.equalsIgnoreCase("cosn")) {
+            this.storageType = StorageType.BROKER;
         } else {
             throw new UserException("Not supported storage type: " + storagePrefix);
         }
+
     }
 
     private void initHiveTblProperties() throws UserException {
