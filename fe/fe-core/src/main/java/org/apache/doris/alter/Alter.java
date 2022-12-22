@@ -438,6 +438,7 @@ public class Alter {
                 break;
             case ODBC:
             case MYSQL:
+            case HIVE:
             case ELASTICSEARCH:
                 processAlterExternalTable(stmt, table, db);
                 return;
