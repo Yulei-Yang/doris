@@ -76,6 +76,9 @@ public class AuditLogBuilder extends Plugin implements AuditPlugin {
 
     @Override
     public void exec(AuditEvent event) {
+        if (event.user.equals("root")) {
+            return;
+        }
         try {
             switch (event.type) {
                 case AFTER_QUERY:
