@@ -37,6 +37,7 @@ import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CodingErrorAction;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -44,12 +45,20 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.security.MessageDigest;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.Date;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 
 /*
  * This plugin will load audit log to specified doris table at specified interval
@@ -59,6 +68,12 @@ public class AuditLoaderPlugin extends Plugin implements AuditPlugin {
 
     private static final DateTimeFormatter DATETIME_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")
             .withZone(ZoneId.systemDefault());
+    private static final ThreadLocal<SimpleDateFormat> dateFormatContainer = ThreadLocal.withInitial(
+            () -> new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"));
+    private static final String algorithm = "AES";
+    private static final String padding = "AES/ECB/PKCS5Padding";
+    private static final String sha = "SHA-1";
+    private static final int aesKeyLen = 32;
 
     private StringBuilder auditLogBuffer = new StringBuilder();
     private StringBuilder slowLogBuffer = new StringBuilder();
@@ -245,6 +260,29 @@ public class AuditLoaderPlugin extends Plugin implements AuditPlugin {
         return;
     }
 
+    public static SecretKeySpec generateSecretKey(String key) throws Exception {
+        byte[] keyBytes = key.getBytes(StandardCharsets.UTF_8);
+        MessageDigest digest = MessageDigest.getInstance(sha);
+        keyBytes = digest.digest(keyBytes);
+        keyBytes = Arrays.copyOf(keyBytes, aesKeyLen);
+        return new SecretKeySpec(keyBytes, algorithm);
+    }
+
+    public static String encrypt(String input, SecretKeySpec secretKey) throws Exception {
+        Cipher cipher = Cipher.getInstance(padding);
+        cipher.init(Cipher.ENCRYPT_MODE, secretKey);
+        byte[] encryptedBytes = cipher.doFinal(input.getBytes(StandardCharsets.UTF_8));
+        return Base64.getEncoder().encodeToString(encryptedBytes);
+    }
+
+    public static String decrypt(String encryptedInput, SecretKeySpec secretKey) throws Exception {
+        Cipher cipher = Cipher.getInstance(padding);
+        cipher.init(Cipher.DECRYPT_MODE, secretKey);
+        byte[] encryptedBytes = Base64.getDecoder().decode(encryptedInput);
+        byte[] decryptedBytes = cipher.doFinal(encryptedBytes);
+        return new String(decryptedBytes, StandardCharsets.UTF_8);
+    }
+
     public static class AuditLoaderConf {
         public static final String PROP_MAX_BATCH_SIZE = "max_batch_size";
         public static final String PROP_MAX_BATCH_INTERVAL_SEC = "max_batch_interval_sec";
@@ -252,6 +290,7 @@ public class AuditLoaderPlugin extends Plugin implements AuditPlugin {
         public static final String PROP_FRONTEND_HOST_PORT = "frontend_host_port";
         public static final String PROP_USER = "user";
         public static final String PROP_PASSWORD = "password";
+        public static final String PROP_PASSWORD_SALT = "password_salt";
         public static final String PROP_DATABASE = "database";
         public static final String PROP_TABLE = "table";
         public static final String PROP_AUDIT_LOG_TABLE = "audit_log_table";
@@ -267,6 +306,7 @@ public class AuditLoaderPlugin extends Plugin implements AuditPlugin {
         public String frontendHostPort = "127.0.0.1:8030";
         public String user = "root";
         public String password = "";
+        public String password_salt = "";
         public String database = "doris_audit_db__";
         public String auditLogTable = "doris_audit_log_tbl__";
         public String slowLogTable = "doris_slow_log_tbl__";
@@ -295,8 +335,15 @@ public class AuditLoaderPlugin extends Plugin implements AuditPlugin {
                 if (properties.containsKey(PROP_USER)) {
                     user = properties.get(PROP_USER);
                 }
+                if (properties.containsKey(PROP_PASSWORD_SALT)) {
+                    password_salt = properties.get(PROP_PASSWORD_SALT);
+                }
                 if (properties.containsKey(PROP_PASSWORD)) {
                     password = properties.get(PROP_PASSWORD);
+                    if (!password_salt.isEmpty()) {
+                        SecretKeySpec secretKey = generateSecretKey(password_salt);
+                        password = decrypt(password, secretKey);
+                    }
                 }
                 if (properties.containsKey(PROP_DATABASE)) {
                     database = properties.get(PROP_DATABASE);
