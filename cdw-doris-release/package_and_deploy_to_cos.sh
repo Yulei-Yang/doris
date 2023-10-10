@@ -163,12 +163,11 @@ init() {
   doris_tar_sha="${doris_tar}.sha512"
   doris_tar_sha_file_path="${workDir}/${doris_tar_sha}"
   cos_bucket_url="${cos_bucket}/${package_type}"
-  upgrade_script_file_with_version="${upgrade_script_file%\.sh}_v${version}.sh"
 
   log "[INFO] doris version is ${doris_full_version}"
   log "[INFO] doris tar package is ${doris_tar}"
   log "[INFO] sha512 file for doris tar package is ${doris_tar_sha}"
-  log "[INFO] upgrade script file for doris is ${upgrade_script_file_with_version}"
+  log "[INFO] upgrade script file for doris is ${upgrade_script_file}"
   log "[INFO] cos bucket url is ${cos_bucket_url}"
 }
 
@@ -257,9 +256,9 @@ package_and_deploy_to_cos() {
     fi
 
     # upload upgrade script 
-    ${coscli_cmd} cp ${workDir}/${upgrade_script_file} ${cos_bucket_url}/${upgrade_script_file_with_version}
+    ${coscli_cmd} cp ${workDir}/${upgrade_script_file} ${cos_bucket_url}/${upgrade_script_file}
     if [ $? -ne 0 ]; then
-      log "[ERROR] upload ${workDir}/${upgrade_script_file} to ${cos_bucket_url}/${upgrade_script_file_with_version} failed!"
+      log "[ERROR] upload ${workDir}/${upgrade_script_file} to ${cos_bucket_url}/${upgrade_script_file} failed!"
       exit 1
     fi
 

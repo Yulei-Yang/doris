@@ -108,15 +108,15 @@ update_monitor_json() {
     if [ $? -eq 0 ]; then # for BE
       node_type="BE"
       if [ "${monitor_json_be_doris}" == "${actual_json}" ]; then
-	need_to_fix=false
+        need_to_fix=false
       fi
     fi
       
     cat ${monitor_json} | grep start_fe > /dev/null
     if [ $? -eq 0 ]; then
       if [ "${node_type}" == "BE" ]; then
-	log "[WARN] there are some errors in ${monitor_json}($(cat ${monitor_json}))"
-	return 1
+        log "[WARN] there are some errors in ${monitor_json}($(cat ${monitor_json}))"
+        return 1
       fi
       node_type="FE"
       if [ "${monitor_json_fe_doris}" == "${actual_json}" ]; then
@@ -204,7 +204,7 @@ update_agent() {
         log "[INFO] no need to fix cdwch-agent"
         return 0
       else
-	log "[INFO] current ${agent_file} is old(md5sum is ${current_md5}), need to update..."
+        log "[INFO] current ${agent_file} is old(md5sum is ${current_md5}), need to update..."
       fi
     fi
     rm -fr ${agent_dir}
@@ -282,19 +282,19 @@ upgrade_doris() {
   local cos_subdir=""
   case ${new_version} in
     0.15)
-	cos_subdir="0.15.0"
+        cos_subdir="0.15.0"
         ;;
     1.0)
-	cos_subdir="1.0.1"
+        cos_subdir="1.0.1"
         ;;
     1.1)
-	cos_subdir="1.1.0"
+        cos_subdir="1.1.0"
         ;;
     1.2)
-	cos_subdir="1.2.0"
+        cos_subdir="1.2.0"
         ;;
     2.0)
-	cos_subdir="2.0"
+        cos_subdir="2.0"
         ;;
     *)
         error_on_rollback "Cannot figure out the cos subdir for unknown ${new_version}!"
