@@ -30,12 +30,14 @@ OPTS="$(getopt \
     -n "$0" \
     -o '' \
     -l 'daemon' \
+    -l 'console' \
     -- "$@")"
 
 eval set -- "${OPTS}"
 
 RUN_DAEMON=0
 RUN_IN_AWS=0
+RUN_CONSOLE=0
 while true; do
     case "$1" in
     --daemon)
@@ -44,6 +46,10 @@ while true; do
         ;;
     --aws)
         RUN_IN_AWS=1
+        shift
+        ;;
+    --console)
+        RUN_CONSOLE=1
         shift
         ;;
     --)
@@ -72,8 +78,13 @@ if [[ "$(uname -s)" != 'Darwin' ]]; then
 fi
 
 MAX_FILE_COUNT="$(ulimit -n)"
-if [[ "${MAX_FILE_COUNT}" -lt 65536 ]]; then
-    echo "Please set the maximum number of open file descriptors to be 65536 using 'ulimit -n 65536'."
+if [[ "${MAX_FILE_COUNT}" -lt 60000 ]]; then
+    echo "Please set the maximum number of open file descriptors larger than 60000, eg: 'ulimit -n 60000'."
+    exit 1
+fi
+
+if [[ "$(swapon -s | wc -l)" -gt 1 ]]; then
+    echo "Please disable swap memory before installation."
     exit 1
 fi
 
@@ -124,10 +135,12 @@ jdk_version() {
     local result
     local IFS=$'\n'
 
-    if [[ -z "${java_cmd}" ]]; then
+    if ! command -v "${java_cmd}" >/dev/null; then
+        echo "ERROR: invalid java_cmd ${java_cmd}" >>"${LOG_DIR}/be.out"
         result=no_java
         return 1
     else
+        echo "INFO: java_cmd ${java_cmd}" >>"${LOG_DIR}/be.out"
         local version
         # remove \r for Cygwin
         version="$("${java_cmd}" -Xms32M -Xmx32M -version 2>&1 | tr '\r' '\n' | grep version | awk '{print $3}')"
@@ -137,6 +150,7 @@ jdk_version() {
         else
             result="$(echo "${version}" | awk -F '.' '{print $1}')"
         fi
+        echo "INFO: jdk_version ${result}" >>"${LOG_DIR}/be.out"
     fi
     echo "${result}"
     return 0
@@ -214,6 +228,13 @@ if [[ "$(uname -s)" != 'Darwin' ]]; then
         exit 2
     fi
 fi
+
+for var in http_proxy HTTP_PROXY https_proxy HTTPS_PROXY; do
+    if [[ -n ${!var} ]]; then
+        echo "env '${var}' = '${!var}', need unset it using 'unset ${var}'"
+        exit 1
+    fi
+done
 
 # From 1.2, it must be start FE by non-root.
 if [ `whoami` = "root" ];then
@@ -335,18 +356,18 @@ java_version="$(
 )"
 
 CUR_DATE=$(date +%Y%m%d-%H%M%S)
-LOG_PATH="-DlogPath=${DORIS_HOME}/log/jni.log"
+LOG_PATH="-DlogPath=${LOG_DIR}/jni.log"
 COMMON_OPTS="-Dsun.java.command=DorisBE -XX:-CriticalJNINatives"
 JDBC_OPTS="-DJDBC_MIN_POOL=1 -DJDBC_MAX_POOL=100 -DJDBC_MAX_IDLE_TIME=300000 -DJDBC_MAX_WAIT_TIME=5000"
 
 if [[ "${java_version}" -gt 8 ]]; then
     if [[ -z ${JAVA_OPTS_FOR_JDK_9} ]]; then
-        JAVA_OPTS_FOR_JDK_9="-Xmx1024m ${LOG_PATH} -Xlog:gc:${DORIS_HOME}/log/be.gc.log.${CUR_DATE} ${COMMON_OPTS} ${JDBC_OPTS}"
+        JAVA_OPTS_FOR_JDK_9="-Xmx1024m ${LOG_PATH} -Xlog:gc:${LOG_DIR}/be.gc.log.${CUR_DATE} ${COMMON_OPTS} ${JDBC_OPTS}"
     fi
     final_java_opt="${JAVA_OPTS_FOR_JDK_9}"
 else
     if [[ -z ${JAVA_OPTS} ]]; then
-        JAVA_OPTS="-Xmx1024m ${LOG_PATH} -Xloggc:${DORIS_HOME}/log/be.gc.log.${CUR_DATE} ${COMMON_OPTS} ${JDBC_OPTS}"
+        JAVA_OPTS="-Xmx1024m ${LOG_PATH} -Xloggc:${LOG_DIR}/be.gc.log.${CUR_DATE} ${COMMON_OPTS} ${JDBC_OPTS}"
     fi
     final_java_opt="${JAVA_OPTS}"
 fi
@@ -354,11 +375,11 @@ fi
 if [[ "${MACHINE_OS}" == "Darwin" ]]; then
     max_fd_limit='-XX:-MaxFDLimit'
 
-    if ! echo "${final_java_opt}" | grep "${max_fd_limit/-/\-}" >/dev/null; then
+    if ! echo "${final_java_opt}" | grep "${max_fd_limit/-/\\-}" >/dev/null; then
         final_java_opt="${final_java_opt} ${max_fd_limit}"
     fi
 
-    if [[ -n "${JAVA_OPTS}" ]] && ! echo "${JAVA_OPTS}" | grep "${max_fd_limit/-/\-}" >/dev/null; then
+    if [[ -n "${JAVA_OPTS}" ]] && ! echo "${JAVA_OPTS}" | grep "${max_fd_limit/-/\\-}" >/dev/null; then
         JAVA_OPTS="${JAVA_OPTS} ${max_fd_limit}"
     fi
 fi
@@ -370,14 +391,16 @@ export LIBHDFS_OPTS="${final_java_opt}"
 #echo "LD_LIBRARY_PATH: ${LD_LIBRARY_PATH}"
 #echo "LIBHDFS_OPTS: ${LIBHDFS_OPTS}"
 
+# https://github.com/apache/doris/blob/master/docs/zh-CN/community/developer-guide/debug-tool.md#jemalloc-heap-profile
+# https://jemalloc.net/jemalloc.3.html
 if [[ -z ${JEMALLOC_CONF} ]]; then
-    JEMALLOC_CONF="percpu_arena:percpu,background_thread:true,metadata_thp:auto,muzzy_decay_ms:15000,dirty_decay_ms:15000,oversize_threshold:0,lg_tcache_max:20,prof:false,lg_prof_interval:32,lg_prof_sample:19,prof_gdump:false,prof_accum:false,prof_leak:false,prof_final:false"
+    JEMALLOC_CONF="percpu_arena:percpu,background_thread:true,metadata_thp:auto,muzzy_decay_ms:15000,dirty_decay_ms:15000,oversize_threshold:0,lg_tcache_max:20,prof:false,lg_prof_interval:32,lg_prof_sample:19,prof_gdump:false,prof_accum:false,prof_leak:false,prof_final:false,confirm_conf:true"
 fi
 
 if [[ -z ${JEMALLOC_PROF_PRFIX} ]]; then
     export JEMALLOC_CONF="${JEMALLOC_CONF},prof_prefix:"
 else
-    JEMALLOC_PROF_PRFIX="${DORIS_HOME}/log/${JEMALLOC_PROF_PRFIX}"
+    JEMALLOC_PROF_PRFIX="${LOG_DIR}/${JEMALLOC_PROF_PRFIX}"
     export JEMALLOC_CONF="${JEMALLOC_CONF},prof_prefix:${JEMALLOC_PROF_PRFIX}"
 fi
 
