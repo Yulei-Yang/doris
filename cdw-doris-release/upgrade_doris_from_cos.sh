@@ -112,7 +112,7 @@ update_monitor_json() {
       fi
     fi
       
-    cat ${monitor_json} | grep start_fe > /dev/null
+    cat ${monitor_json} | grep PaloFe > /dev/null
     if [ $? -eq 0 ]; then
       if [ "${node_type}" == "BE" ]; then
         log "[WARN] there are some errors in ${monitor_json}($(cat ${monitor_json}))"
@@ -166,7 +166,7 @@ update_monitor_json() {
     node_type="BE"
     log "[INFO] create new ${monitor_json_bak} for ${node_type} node"
   else 
-    cat ${monitor_json_old} | grep start_fe > /dev/null
+    cat ${monitor_json_old} | grep PaloFe > /dev/null
     if [ $? -eq 0 ]; then
       echo ${monitor_json_fe_doris} > ${monitor_json_bak}
       if [ "${node_type}" == "BE" ]; then
@@ -343,8 +343,12 @@ upgrade_doris() {
   local dest_dir="/usr/local/service/doris"
   local doris_be_bin="${dest_dir}/lib/be/doris_be"
   if [ ! -f ${doris_be_bin} ]; then
-    error_on_rollback "${doris_be_bin} not exists."
-    exit -1
+    log "[INFO] doris_be is not exists, try to find palo_be in ${dest_dir}/lib/be."
+    doris_be_bin="${dest_dir}/lib/be/palo_be"
+    if [ ! -f ${doris_be_bin} ]; then
+      error_on_rollback "Both doris_be and palo_be are not exists."
+      exit -1
+    fi
   fi
   local version_str=$(${doris_be_bin} --version)
   local old_version=$(echo ${version_str} | egrep -o "[0-9]\.[0-9]+" | head -1)
@@ -390,7 +394,7 @@ upgrade_doris() {
     local group="doris"
     local user="doris"
 
-    # create group if not exists
+    # 1. create group if not exists
     egrep "^$group" /etc/group >& /dev/null
     if [ $? -ne 0 ]; then
       groupadd $group
@@ -401,7 +405,7 @@ upgrade_doris() {
       fi
     fi
 
-    # create user if not exists
+    # 2. create user if not exists
     egrep "^$user" /etc/passwd >& /dev/null
     if [ $? -ne 0 ]; then
       useradd -g $group $user
@@ -412,14 +416,17 @@ upgrade_doris() {
       fi
     fi
 
-    # change the owner for work dir
+    # 3. check and fix owners of working dir
+    log "[INFO] check and fix owners of working dir"
     change_working_dir_owner
+    
+    # 4. check and fix monitor.json
+    log "[INFO] check and fix monitor.json"
+    update_monitor_json
 
-    # update agent
+    # 5. check and fix cdwch-agent
+    log "[INFO] check and fix cdwch-agent"
     update_agent
-
-    # update monitor json
-    update_monitor_json 
   fi
 
   log "[INFO] success to upgrade doris from v${old_version} to v${new_version}."
