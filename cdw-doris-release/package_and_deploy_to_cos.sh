@@ -201,7 +201,7 @@ package_and_deploy_to_cos() {
   log "[INFO] install conf and bin dir to ${dest_dir} ok."
 
   cd ${workDir}
-  local dir_list="lib spark-dpp udf plugins www webroot"
+  local dir_list="lib spark-dpp udf plugins www webroot dict"
   mv ${dir_list} ${dest_dir}
   if [ $? -ne 0 ]; then
     log "[ERROR] move ${dir_list} to ${dest_dir} failed, maybe you need to run deploy.sh in docker."

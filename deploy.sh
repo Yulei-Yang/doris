@@ -44,10 +44,11 @@ rm auditloader.zip
 cd -
 
 # build other directories
-echo "[INFO] deploy udf, spark-dpp, webroot and www"
+echo "[INFO] deploy udf, spark-dpp, webroot, dict and www"
 cp -a $HOME_DIR/output/udf .
 cp -a $HOME_DIR/output/fe/spark-dpp .
 cp -a $HOME_DIR/output/fe/webroot .
 cp -a $HOME_DIR/output/be/www .
+cp -a $HOME_DIR/output/be/dict .
 
 echo "[INFO] successfully deployed"
