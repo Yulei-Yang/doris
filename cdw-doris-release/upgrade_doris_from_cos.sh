@@ -386,6 +386,17 @@ upgrade_doris() {
     cp -f ${backupDir}/doris/*.keytab ${dest_dir}
   fi
 
+  # restore old jdbc drivers
+  local old_jdbc_driver_dir="${backupDir}/doris/jdbc_drivers"
+  local new_jdbc_driver_dir="${dest_dir}/jdbc_drivers"
+  if [ -d "${old_jdbc_driver_dir}" ]; then
+    log "[INFO] restore old jdbc_drivers."
+    if [ ! -d "${new_jdbc_driver_dir}" ]; then
+      mkdir -p ${new_jdbc_driver_dir}
+    fi
+    cp -f ${old_jdbc_driver_dir}/*.jar "${new_jdbc_driver_dir}"
+  fi
+
   # need to add doris user group for upgrading from 1.2 and later
   if [ "${new_version}" == "1.2" ] && [ "${old_version}" == "1.1" ]; then
 
