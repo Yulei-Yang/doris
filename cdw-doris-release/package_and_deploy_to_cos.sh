@@ -10,7 +10,9 @@ doris_dir_name="doris"
 coscli_cmd="/data/coscli-linux"
 cos_backup_subdir="cdw_doris_backup"
 log_file="log_package_and_deploy_to_cos.log"
-cos_bucket="cos://derenli-1301087413" # install location
+cos_bucket="cos://derenli-1301087413" 
+doris_release_package_dir="doris_release_package"
+doris_be_debug_package_dir="doris_be_debug_package"
 upgrade_script_file="upgrade_doris_from_cos.sh"
 #release_to_chongqing_cos_url="https://cdwch-cos-apps-cq-1305504398.cos.ap-chongqing.myqcloud.com/doris/1.2.0"
 #
@@ -112,7 +114,6 @@ init() {
     exit -1
   fi
   
-  export DORIS_HOME="${workDir}/../be/output"
   local version_str=$(${doris_be_bin} --version)
   local version=$(echo ${version_str} | egrep -o "[1|2]\.[0-9]" | head -n 1)
   if [ "$version" != "1.1" -a "$version" != "1.2" -a "$version" != "2.0" ]; then
@@ -120,55 +121,20 @@ init() {
     exit -1
   fi
 
-  local version_type=$(echo ${version_str} | egrep -o "doris\-([a-zA-Z]*)" | head -n 1)
-  log "[INFO] version type is ${version_type}"
-  
-  local suffix=""
-  case "${version_type#doris-}" in
-    test|t)
-    suffix="_test_version"
-    ;;
-    hc)
-    suffix="_high_concurrency_version"
-    ;;
-    jdbc|JDBC)
-    suffix="_jdbc_version"
-    ;;
-    *)
-    if [ $# -eq 1 ] ; then
-      case "$1" in
-        test|t)
-        suffix="_test_version"
-        ;;
-        hc)
-        suffix="_high_concurrency_version"
-        ;;
-        jdbc|JDBC)
-        suffix="_jdbc_version"
-        ;;
-        *)
-        ;;
-      esac
-    fi
-    ;;
-  esac
-  package_type="doris_release_package${suffix}"
-  log "[INFO] set package type to ${package_type}"
-
   # now init global variables
   local short_version=$(git log -1 --pretty=format:"%h")
   local doris_full_version="${version_str%%(*}-${short_version:0:7}"
   doris_version_string=${version_str/(/-${short_version:0:7}(}
   doris_tar="${doris_full_version}.tar.gz"
   doris_tar_sha="${doris_tar}.sha512"
+  doris_be_without_strip_tar="${doris_full_version}-doris_be.tar.gz"
   doris_tar_sha_file_path="${workDir}/${doris_tar_sha}"
-  cos_bucket_url="${cos_bucket}/${package_type}"
 
   log "[INFO] doris version is ${doris_full_version}"
   log "[INFO] doris tar package is ${doris_tar}"
   log "[INFO] sha512 file for doris tar package is ${doris_tar_sha}"
   log "[INFO] upgrade script file for doris is ${upgrade_script_file}"
-  log "[INFO] cos bucket url is ${cos_bucket_url}"
+  log "[INFO] cos bucket is ${cos_bucket}"
 }
 
 package_and_deploy_to_cos() {
@@ -207,11 +173,36 @@ package_and_deploy_to_cos() {
     log "[ERROR] move ${dir_list} to ${dest_dir} failed, maybe you need to run deploy.sh in docker."
     exit 1
   fi
+  log "[INFO] reinstall new dir list(${dir_list}) ok."
 
   # remove useless link
   rm -f ${dest_dir}/lib/be/palo_be
+  log "[INFO] remove useless link palo_be ok."
 
-  log "[INFO] reinstall new dir list(${dir_list}) ok."
+  # package debug version
+  local doris_be_without_strip="${dest_dir}/lib/be/doris_be"
+  if [ ! -f "${doris_be_without_strip}" ]; then
+    log "[ERROR] ${doris_be_without_strip} not found"
+    exit -1
+  fi
+  cd "${dest_dir}/lib/be"
+  tar -zcf "${doris_be_without_strip_tar}" "doris_be"
+  if [ $? -ne 0 ]; then
+    log "[ERROR] compress tar package ${doris_be_without_strip_tar_path} failed!"
+    exit 1
+  fi
+  mv "${doris_be_without_strip_tar}" ${workDir}
+  cd ${workDir}
+  local doris_be_without_strip_tar_path="${workDir}/${doris_be_without_strip_tar}"
+  log "[INFO] compress tar package ${doris_be_without_strip_tar} ok."
+
+  # strip doris_be
+  strip --strip-debug ${doris_be_without_strip}
+  if [ $? -ne 0 ]; then
+    log "[ERROR] strip ${doris_be_without_strip} failed!"
+    exit 1
+  fi
+  log "[INFO] strip ${doris_be_without_strip} ok!"
 
   # make tar package
   log "[INFO] start to make a tar package ${upgrade_file_path} from ${doris_dir_name}, it need to a few minutes..."
@@ -221,7 +212,7 @@ package_and_deploy_to_cos() {
     log "[ERROR] ${doris_dir_name} is not exist!"
     exit 1
   fi
-  tar -zcf "${upgrade_file_path}"  ${doris_dir_name}
+  tar -zcf "${upgrade_file_path}" "${doris_dir_name}"
   if [ $? -ne 0 ]; then
     log "[ERROR] compress tar package ${upgrade_file_path} failed!"
     exit 1
@@ -239,6 +230,8 @@ package_and_deploy_to_cos() {
   # upload to cos
   log "[INFO] start to upload the tar package ${upgrade_file_path} to cos bucket, it need to a few minutes..."
   if [ -e ${coscli_cmd} ]; then
+
+    local cos_bucket_url="${cos_bucket}/${doris_release_package_dir}"
     
     # backup last tar package, it will cover old one
     ${coscli_cmd} cp "${cos_bucket_url}/${doris_tar}" "${cos_bucket_url}/${cos_backup_subdir}/${doris_tar}"
@@ -277,6 +270,15 @@ package_and_deploy_to_cos() {
       exit 1
     fi
     log "[INFO] upload (${upgrade_script_file}), tar package(${upgrade_file_path}) and checksum file(${doris_tar_sha_file_path}) to ${cos_bucket_url} ok"
+
+    # upload doris_be without strip tar file
+    cos_bucket_url="${cos_bucket}/${doris_be_debug_package_dir}"
+    ${coscli_cmd} cp ${doris_be_without_strip_tar_path} ${cos_bucket_url}/${doris_be_without_strip_tar}
+    if [ $? -ne 0 ]; then
+      log "[ERROR] upload ${doris_be_without_strip_tar_path} to ${cos_bucket_url}/${doris_be_without_strip_tar} failed!"
+      exit 1
+    fi
+    log "[INFO] upload ${doris_be_without_strip_tar_path} to ${cos_bucket_url} ok"
   fi
 
 #  log "[INFO] upload to chongqing cos"
@@ -312,6 +314,15 @@ show_release_info() {
   echo ""
 }
 
+show_git_log_message() {
+  SKIP_LINE_NUM=0
+  git log -5 --skip=$SKIP_LINE_NUM --date=format:'[%Y-%m-%d %H:%M:%S]' --pretty=format:"%ad [%an] %s"
+  echo "..."
+  SKIP_LINE_NUM=$(git log --oneline | egrep -c -w "^[^[:space:]]+\s+\[Tencent\]")
+  git log -5 --skip=$SKIP_LINE_NUM --date=format:'[%Y-%m-%d %H:%M:%S]' --pretty=format:"%ad [%an] %s"
+}
+
 init $@
 package_and_deploy_to_cos
 show_release_info || true
+show_git_log_message || true
