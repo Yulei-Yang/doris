@@ -8,7 +8,7 @@ curdir=$(
 )
 HOME_DIR=$curdir
 
-COS_URL="https://derenli-1301087413.cos.ap-guangzhou.myqcloud.com/doris_test"
+COS_URL="https://derenli-1301087413.cos.ap-guangzhou.myqcloud.com/doris_release_package/thridparty"
 
 rm -fr "${HOME_DIR}/be/src/apache-orc"
 rm -fr "${HOME_DIR}/be/src/clucene"
