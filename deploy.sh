@@ -1,54 +1,104 @@
 #!/usr/bin/env bash
+
 #set -x
 
-HOME_DIR=`pwd`
-PREFIX_DIR=$HOME_DIR/cdw-doris-release
-if [ ! -d ${PREFIX_DIR} ]; then
-  echo "[ERROR] ${PREFIX_DIR} dir is not exist"
-  exit -1
+cur_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
+work_dir="${cur_dir}/cdw-doris-release"
+dest_dir="${work_dir}/doris"
+
+log() {
+  echo "$@"
+}
+
+# clear old dir list
+if [ ! -d "${dest_dir}" ]; then
+  log "[INFO] create ${dest_dir}"
+  mkdir "${dest_dir}"
+else
+  log "[INFO] clear the content of ${dest_dir}"
+  rm -fr "${dest_dir}/"*
 fi
 
-cd $PREFIX_DIR
-# build lib directory
-echo "[INFO] clean ${PREFIX_DIR}/lib"
-rm -fr lib
-mkdir lib
-echo "[INFO] deploy ${PREFIX_DIR}/lib"
-
 # install fe libs
-cp -a $HOME_DIR/output/fe/lib lib/fe
-mv lib/fe/help-resource.zip lib/
+mkdir -p "${dest_dir}/lib/fe"
+ret=$(cp -a "${cur_dir}/output/fe/lib/"*.jar "${dest_dir}/lib/fe/")
+if [ $? -ne 0 ]; then
+  log "[ERROR] failed to install fe libs."
+  exit 1
+fi
+log "[INFO] success to install fe libs."
+
+# install help-resource 
+ret=$(cp -a "${cur_dir}/output/fe/lib/help-resource.zip" "${dest_dir}/lib")
+if [ $? -ne 0 ]; then
+  log "[ERROR] failed to install help-resource.zip."
+  exit 1
+fi
+log "[INFO] success to install help-resource.zip."
 
 # install be libs
-rm -fr lib/be/debug_info
-mkdir -p lib/be
-cp -a $HOME_DIR/output/be/lib/doris_be lib/be/
-cp -a $HOME_DIR/output/be/lib/{hadoop_hdfs,java_extensions} lib/
+mkdir -p "${dest_dir}/lib/be"
+ret=$(cp -a "${cur_dir}/output/be/lib/doris_be" "${dest_dir}/lib/be")
+if [ $? -ne 0 ]; then
+  log "[ERROR] failed to install doris_be."
+  exit 1
+fi
+log "[INFO] success to install doris_be."
+
+# install hadoop_hdfs and java_extensions
+ret=$(cp -a "${cur_dir}/output/be/lib/"{hadoop_hdfs,java_extensions} "${dest_dir}/lib/")
+if [ $? -ne 0 ]; then
+  log "[ERROR] failed to install hadoop_hdfs and java_extensions."
+  exit 1
+fi
+log "[INFO] success to install hadoop_hdfs and java_extensions."
 
 # install broker libs
-cp -a $HOME_DIR/fs_brokers/apache_hdfs_broker/output/apache_hdfs_broker/lib lib/broker
+mkdir -p "${dest_dir}/lib/broker"
+ret=$(cp -a "${cur_dir}/fs_brokers/apache_hdfs_broker/output/apache_hdfs_broker/lib/"*.jar "${dest_dir}/lib/broker")
+if [ $? -ne 0 ]; then
+  log "[ERROR] failed to install broker."
+  exit 1
+fi
+log "[INFO] success to install broker."
 
-# install tencent libs
-cp -a ${PREFIX_DIR}/tencent_libs/*.jar lib/broker
-cp -a ${PREFIX_DIR}/tencent_libs/*.jar lib/fe
+# install tencent libs for broker and fe
+ret=$(cp -a "${work_dir}/tencent_libs/"*.jar "${dest_dir}/lib/broker" && 
+	cp -a "${work_dir}/tencent_libs/"*.jar "${dest_dir}/lib/fe")
+if [ $? -ne 0 ]; then
+  log "[ERROR] failed to install tencent libs for broker and fe."
+  exit 1
+fi
+log "[INFO] success to install tencent libs for broker and fe."
 
 # build plugins directory
-echo "[INFO] clean ${PREFIX_DIR}/plugins"
-rm -fr plugins
-echo "[INFO] deploy ${PREFIX_DIR}/plugins"
-mkdir -p plugins/AuditLoader
-cd plugins/AuditLoader
-cp $HOME_DIR/fe_plugins/auditloader/target/auditloader.zip .
-unzip auditloader.zip
-rm auditloader.zip
-cd -
+mkdir -p "${dest_dir}/plugins/AuditLoader"
+ret=$(unzip "${cur_dir}/fe_plugins/auditloader/target/auditloader.zip" -d "${dest_dir}/plugins/AuditLoader")
+if [ $? -ne 0 ]; then
+  log "[ERROR] failed to install audit loader plugin."
+  exit 1
+fi
+log "[INFO] success to install audit loader plugin."
 
 # build other directories
 echo "[INFO] deploy udf, spark-dpp, webroot, dict and www"
-cp -a $HOME_DIR/output/udf .
-cp -a $HOME_DIR/output/fe/spark-dpp .
-cp -a $HOME_DIR/output/fe/webroot .
-cp -a $HOME_DIR/output/be/www .
-cp -a $HOME_DIR/output/be/dict .
+ret=$(cp -a "${cur_dir}/be/output/udf" "${dest_dir}" &&
+cp -a "${cur_dir}/output/fe/spark-dpp" "${dest_dir}" &&
+cp -a "${cur_dir}/output/fe/webroot" "${dest_dir}" &&
+cp -a "${cur_dir}/output/be/www" "${dest_dir}" &&
+cp -a "${cur_dir}/output/be/dict" "${dest_dir}")
+if [ $? -ne 0 ]; then
+  log "[ERROR] failed to install udf, spark-dpp, webroot, dict and www."
+  exit 1
+fi
+log "[INFO] success to install udf, spark-dpp, webroot, dict and www."
+
+# install conf bin and jdbc drivers.
+ret=$(cp -a "${work_dir}/"{conf,bin,jdbc_drivers} "${dest_dir}")
+if [ $? -ne 0 ]; then
+  log "[ERROR] failed to install conf bin and jdbc drivers."
+  exit 1
+fi
+log "[INFO] success to install conf bin and jdbc drivers."
 
 echo "[INFO] successfully deployed"

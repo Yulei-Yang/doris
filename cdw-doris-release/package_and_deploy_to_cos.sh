@@ -142,42 +142,9 @@ package_and_deploy_to_cos() {
 
   # clear old dir and package
   local dest_dir="${workDir}/${doris_dir_name}"
-  rm -fr ${dest_dir}
   local upgrade_file_path="${workDir}/${doris_tar}"
   rm -f ${upgrade_file_path}
-  log "[INFO] clear old dir (${dest_dir}) and package(${upgrade_file_path})."
-
-  # clear old dir list
-  if [ ! -d ${dest_dir} ]; then
-    log "[INFO] create ${dest_dir}"
-    mkdir ${dest_dir}
-  else
-    log "[INFO] clear the content of ${dest_dir}"
-    rm -fr ${dest_dir}/*
-  fi
-
-  # install conf bin and jdbc drivers.
-  cd ${workDir}
-  local other_files="conf bin jdbc_drivers"
-  cp -a ${other_files} ${dest_dir}
-  if [ $? -ne 0 ]; then
-    log "[ERROR] copy ${other_files} to ${dest_dir} failed, please make sure ${other_files} exist in ${workDir}."
-    exit 1
-  fi
-  log "[INFO] install conf and bin dir to ${dest_dir} ok."
-
-  cd ${workDir}
-  local dir_list="lib spark-dpp udf plugins www webroot dict"
-  mv ${dir_list} ${dest_dir}
-  if [ $? -ne 0 ]; then
-    log "[ERROR] move ${dir_list} to ${dest_dir} failed, maybe you need to run deploy.sh in docker."
-    exit 1
-  fi
-  log "[INFO] reinstall new dir list(${dir_list}) ok."
-
-  # remove useless link
-  rm -f ${dest_dir}/lib/be/palo_be
-  log "[INFO] remove useless link palo_be ok."
+  log "[INFO] clear old package(${upgrade_file_path})."
 
   # package debug version
   local doris_be_without_strip="${dest_dir}/lib/be/doris_be"
