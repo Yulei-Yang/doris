@@ -15,7 +15,4 @@ if [ $? -ne 0 ]; then
   echo "[ERROR] failed to build with docker."
   exit 1
 fi
-log "[INFO] success to build with docker."
-
-# deploy
-sh ${WORK_DIR}/deploy.sh
+echo "[INFO] success to build with docker."
