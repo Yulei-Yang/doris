@@ -72,6 +72,8 @@ else
     url="file://${hostname}"
 fi
 
+echo "${build_version}-${short_revision}" > "${DORIS_HOME}/version.txt"
+
 cd "${cwd}"
 
 build_hash="${url}@${revision}"
