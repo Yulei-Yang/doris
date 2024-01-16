@@ -47,7 +47,7 @@ fi
 log "[INFO] success to install doris_be."
 
 # install hadoop_hdfs and java_extensions
-ret=$(cp -a "${cur_dir}/output/be/lib/"{hadoop_hdfs,java_extensions} "${dest_dir}/lib/")
+ret=$(cp -a "${cur_dir}/output/be/lib/"{hadoop_hdfs,java_extensions} "${dest_dir}/lib/be")
 if [ $? -ne 0 ]; then
   log "[ERROR] failed to install hadoop_hdfs and java_extensions."
   exit 1
@@ -63,14 +63,20 @@ if [ $? -ne 0 ]; then
 fi
 log "[INFO] success to install broker."
 
-# install tencent libs for broker and fe
-ret=$(cp -a "${work_dir}/tencent_libs/"*.jar "${dest_dir}/lib/broker" && 
-	cp -a "${work_dir}/tencent_libs/"*.jar "${dest_dir}/lib/fe")
+# install tencent libs for be, fe and broker 
+ret=$(
+  cp -a "${work_dir}/tencent_libs/common/"*.jar "${dest_dir}/lib/broker" && 
+  cp -a "${work_dir}/tencent_libs/common/"*.jar "${dest_dir}/lib/be/hadoop_hdfs/common" &&
+  cp -a "${work_dir}/tencent_libs/common/"*.jar "${dest_dir}/lib/fe" &&
+  cp -a "${work_dir}/tencent_libs/broker/"*.jar "${dest_dir}/lib/broker" && 
+  cp -a "${work_dir}/tencent_libs/be/"*.jar "${dest_dir}/lib/be/hadoop_hdfs/common" &&
+  cp -a "${work_dir}/tencent_libs/fe/"*.jar "${dest_dir}/lib/fe"
+)
 if [ $? -ne 0 ]; then
-  log "[ERROR] failed to install tencent libs for broker and fe."
+  log "[ERROR] failed to install tencent libs for be, fe and broker."
   exit 1
 fi
-log "[INFO] success to install tencent libs for broker and fe."
+log "[INFO] success to install tencent libs for be, fe and broker."
 
 # build plugins directory
 mkdir -p "${dest_dir}/plugins/AuditLoader"
@@ -82,11 +88,13 @@ fi
 log "[INFO] success to install audit loader plugin."
 
 # build other directories
-ret=$(cp -a "${cur_dir}/be/output/udf" "${dest_dir}" &&
-cp -a "${cur_dir}/output/fe/spark-dpp" "${dest_dir}" &&
-cp -a "${cur_dir}/output/fe/webroot" "${dest_dir}" &&
-cp -a "${cur_dir}/output/be/www" "${dest_dir}" &&
-cp -a "${cur_dir}/output/be/dict" "${dest_dir}")
+ret=$(
+  cp -a "${cur_dir}/be/output/udf" "${dest_dir}" &&
+  cp -a "${cur_dir}/output/fe/spark-dpp" "${dest_dir}" &&
+  cp -a "${cur_dir}/output/fe/webroot" "${dest_dir}" &&
+  cp -a "${cur_dir}/output/be/www" "${dest_dir}" &&
+  cp -a "${cur_dir}/output/be/dict" "${dest_dir}"
+)
 if [ $? -ne 0 ]; then
   log "[ERROR] failed to install udf, spark-dpp, webroot, dict and www."
   exit 1
@@ -113,6 +121,7 @@ log "[INFO] success to get version string is ${version_str}."
 
 # Package(2/4) package the tar without strip
 doris_be_without_strip_tar="${version_str}-doris_be.tar.gz"
+log "[INFO] start to compress doris_be without strip to ${work_dir}/${doris_be_without_strip_tar}..."
 cd "${dest_dir}/lib/be"
 tar -zcf "${doris_be_without_strip_tar}" "doris_be"
 if [ $? -ne 0 ]; then
