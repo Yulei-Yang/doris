@@ -18,6 +18,7 @@ upgrade_script_file="upgrade_doris_from_cos.sh"
 
 cos_bucket="cos://${bucket}" 
 download_cos_url="https://${bucket}.cos.ap-${region}.myqcloud.com/${doris_release_package_dir}"
+download_debug_doris_be_cos_url="https://${bucket}.cos.ap-${region}.myqcloud.com/${doris_be_debug_package_dir}"
 #
 ################################################################################################################################
 
@@ -53,6 +54,16 @@ init() {
   doris_tar_sha="${doris_tar}.sha512"
   doris_be_without_strip_tar="${doris_version_string}-doris_be.tar.gz"
   doris_tar_sha_file_path="${workDir}/${doris_tar_sha}"
+
+  if [ ! -f "${workDir}/${doris_tar}" ]; then
+    log "[ERROR] ${workDir}/${doris_tar} is not exist, please run deploy.sh first."
+    exit -1
+  fi
+
+  if [ ! -f "${workDir}/${doris_be_without_strip_tar}" ]; then
+    log "[ERROR] ${workDir}/${doris_be_without_strip_tar} is not exist, please run deploy.sh first."
+    exit -1
+  fi
 
   log "[INFO] doris version is ${doris_version_string}"
   log "[INFO] doris tar package is ${doris_tar}"
@@ -169,6 +180,8 @@ show_release_info() {
   fi
   echo "Download URL:"
   echo "${download_cos_url}/${doris_version_string}.tar.gz"
+  echo "Debug doris_be URL:"
+  echo "${download_debug_doris_be_cos_url}/${doris_be_without_strip_tar}"
   echo "********************************************************"
   echo ""
 }
