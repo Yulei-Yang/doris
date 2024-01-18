@@ -47,7 +47,7 @@ fi
 log "[INFO] success to install doris_be."
 
 # install hadoop_hdfs and java_extensions
-ret=$(cp -a "${cur_dir}/output/be/lib/"{hadoop_hdfs,java_extensions} "${dest_dir}/lib/be")
+ret=$(cp -a "${cur_dir}/output/be/lib/"{hadoop_hdfs,java_extensions} "${dest_dir}/lib")
 if [ $? -ne 0 ]; then
   log "[ERROR] failed to install hadoop_hdfs and java_extensions."
   exit 1
@@ -66,10 +66,10 @@ log "[INFO] success to install broker."
 # install tencent libs for be, fe and broker 
 ret=$(
   cp -a "${work_dir}/tencent_libs/common/"*.jar "${dest_dir}/lib/broker" && 
-  cp -a "${work_dir}/tencent_libs/common/"*.jar "${dest_dir}/lib/be/hadoop_hdfs/common" &&
+  cp -a "${work_dir}/tencent_libs/common/"*.jar "${dest_dir}/lib/hadoop_hdfs/common" &&
   cp -a "${work_dir}/tencent_libs/common/"*.jar "${dest_dir}/lib/fe" &&
   cp -a "${work_dir}/tencent_libs/broker/"*.jar "${dest_dir}/lib/broker" && 
-  cp -a "${work_dir}/tencent_libs/be/"*.jar "${dest_dir}/lib/be/hadoop_hdfs/common" &&
+  cp -a "${work_dir}/tencent_libs/be/"*.jar "${dest_dir}/lib/hadoop_hdfs/common" &&
   cp -a "${work_dir}/tencent_libs/fe/"*.jar "${dest_dir}/lib/fe"
 )
 if [ $? -ne 0 ]; then

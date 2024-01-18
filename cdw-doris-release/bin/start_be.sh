@@ -16,12 +16,10 @@
 # specific language governing permissions and limitations
 # under the License.
 
-set -eo pipefail
-
 curdir="$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
 
 MACHINE_OS=$(uname -s)
-if [[ "$(uname -s)" == 'Darwin' ]] && command -v brew &>/dev/null; then
+if [[ "${MACHINE_OS}" == 'Darwin' ]] && command -v brew &>/dev/null; then
     PATH="$(brew --prefix)/opt/gnu-getopt/bin:${PATH}"
     export PATH
 fi
@@ -84,11 +82,13 @@ if [[ "${MAX_FILE_COUNT}" -lt 60000 ]]; then
 fi
 
 if [[ "$(swapon -s | wc -l)" -gt 1 ]]; then
-    echo "Please disable swap memory before installation."
+    echo "Please disable swap memory before installation, eg: 'swapoff -a'."
     exit 1
 fi
 
 # add java libs
+# Must add hadoop libs, because we should load specified jars
+# instead of jars in hadoop libs, such as avro
 preload_jars=("preload-extensions")
 preload_jars+=("java-udf")
 
@@ -118,8 +118,15 @@ if [[ -d "${DORIS_HOME}/lib/hadoop_hdfs/" ]]; then
     done
 fi
 
+# add custome_libs to CLASSPATH
+if [[ -d "${DORIS_HOME}/custom_lib" ]]; then
+    for f in "${DORIS_HOME}/custom_lib"/*.jar; do
+        DORIS_CLASSPATH="${DORIS_CLASSPATH}:${f}"
+    done
+fi
+
 if [[ -n "${HADOOP_CONF_DIR}" ]]; then
-    export DORIS_CLASSPATH="${HADOOP_CONF_DIR}:${DORIS_CLASSPATH}"
+    export DORIS_CLASSPATH="${DORIS_CLASSPATH}:${HADOOP_CONF_DIR}"
 fi
 
 # the CLASSPATH and LIBHDFS_OPTS is used for hadoop libhdfs
