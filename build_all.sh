@@ -44,7 +44,8 @@ if [[ ! -d "${WORK_DIR}/.m2" ]]; then
 fi
 
 # clean and build all
-sh ${WORK_DIR}/build.sh --clean --fe --be --broker --audit --spark-dpp --hive-udf -j90
+PARALLEL=$(nproc)
+sh ${WORK_DIR}/build.sh --clean --fe --be --broker --audit --spark-dpp --hive-udf -j${PARALLEL}
 if [ $? -ne 0 ]; then
   echo "build fe be and ui failed!"
   exit 1
