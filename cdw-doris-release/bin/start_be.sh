@@ -300,7 +300,8 @@ else
 fi
 
 ulimit -n 90000
-ulimit -c unlimited
+# limit in 100g
+ulimit -c 107374182400
 
 ## If you are not running in aws cloud, disable this env since https://github.com/aws/aws-sdk-cpp/issues/1410.
 if [[ "${RUN_IN_AWS}" -eq 0 ]]; then
