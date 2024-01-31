@@ -374,11 +374,11 @@ upgrade_doris() {
   log "[INFO] copy ${untar_work_dir}/doris to ${dest_dir} ok."
 
   # restore conf files
-  log "[INFO] restore old conf and plugins."
+  log "[INFO] restore old conf of be, fe."
   rm -fr ${dest_dir}/conf
   cp -a ${backupDir}/doris/conf ${dest_dir}
-  rm -fr ${dest_dir}/plugins
-  cp -fr ${backupDir}/doris/plugins ${dest_dir}
+  log "[INFO] restore old conf of audit loader plugin."
+  cp -f "${backupDir}/doris/plugins/AuditLoader/plugin.conf" "${dest_dir}/plugins/AuditLoader"
 
   # restore keytab file if exists
   if ls ${backupDir}/doris/*.keytab &> /dev/null; then
