@@ -41,6 +41,13 @@ if [[ ! -d "${WORK_DIR}/.m2" ]]; then
     wget -q "${MAVEN_REPO_COS_URL}/maven_repo_m2_cdwdoris-2.0.tar.gz" -P "${WORK_DIR}"
   fi
   tar zxf "${WORK_DIR}/maven_repo_m2_cdwdoris-2.0.tar.gz" -C "${WORK_DIR}"
+else 
+  prefix="${WORK_DIR}/.m2/repository/org/apache"
+  mkdir -p "${prefix}"
+  if [[ ! -f "${MAVEN_REPO_COS_URL}/maven_doris-2.0.tar.gz" ]]; then
+    wget -q "${MAVEN_REPO_COS_URL}/maven_doris-2.0.tar.gz" -P "${WORK_DIR}"
+  fi
+  tar zxf "${WORK_DIR}/maven_doris-2.0.tar.gz" -C "${prefix}"
 fi
 
 # clean and build all
