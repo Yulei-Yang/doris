@@ -178,6 +178,7 @@ show_release_info() {
   if [ $strtail -ne 0 ]; then
     echo ${str:sPos:strtail}
   fi
+  echo "Release Date: $(date '+%Y-%m-%d %H:%M:%S')" 
   echo "Download URL:"
   echo "${download_cos_url}/${doris_version_string}.tar.gz"
   echo "Debug doris_be URL:"
@@ -195,6 +196,6 @@ show_git_log_message() {
 }
 
 init $@
-package_and_deploy_to_cos
+#package_and_deploy_to_cos
 show_release_info || true
 show_git_log_message || true
