@@ -196,6 +196,6 @@ show_git_log_message() {
 }
 
 init $@
-#package_and_deploy_to_cos
+package_and_deploy_to_cos
 show_release_info || true
 show_git_log_message || true
