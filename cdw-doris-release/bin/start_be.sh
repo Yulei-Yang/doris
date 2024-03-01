@@ -77,8 +77,8 @@ fi
 
 MAX_FILE_COUNT="$(ulimit -n)"
 if [[ "${MAX_FILE_COUNT}" -lt 60000 ]]; then
-    echo "Please set the maximum number of open file descriptors larger than 60000, eg: 'ulimit -n 60000'."
-    exit 1
+    echo "The maximum number of open file descriptors less than 60000, now set to 90000."
+    ulimit -n 90000
 fi
 
 if [[ "$(swapon -s | wc -l)" -gt 1 ]]; then
@@ -299,7 +299,6 @@ else
     LIMIT="/bin/limit3 -c 0 -n 65536"
 fi
 
-ulimit -n 90000
 # limit in 100g
 ulimit -c 107374182400
 
