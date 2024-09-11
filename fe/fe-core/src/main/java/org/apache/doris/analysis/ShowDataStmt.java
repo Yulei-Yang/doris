@@ -299,7 +299,9 @@ public class ShowDataStmt extends ShowStmt implements NotFallbackInParser {
                     String indexName = olapTable.getIndexNameById(indexId);
                     // .add("TableName").add("IndexName").add("Size").add("ReplicaCount").add("RowCount")
                     //      .add("RemoteSize")
-                    List<Object> row = Arrays.asList(tableName, indexName, indexSize, indexReplicaCount,
+                    String tableShowName = olapTable.getType() == TableType.TEMP
+                            ? Util.getTempTableOuterName(tableName.getTbl()) : tableName.getTbl();
+                    List<Object> row = Arrays.asList(tableShowName, indexName, indexSize, indexReplicaCount,
                              indexRowCount, indexRemoteSize);
                     totalRowsObject.add(row);
 

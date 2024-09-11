@@ -128,6 +128,7 @@ public class CreateTableInfo {
     private boolean isEnableMergeOnWrite = false;
 
     private boolean isExternal = false;
+    private boolean isTemp = false;
     private String clusterName = null;
     private List<String> clusterKeysColumnNames = null;
     private PartitionTableInfo partitionTableInfo; // get when validate
@@ -135,7 +136,7 @@ public class CreateTableInfo {
     /**
      * constructor for create table
      */
-    public CreateTableInfo(boolean ifNotExists, boolean isExternal, String ctlName, String dbName,
+    public CreateTableInfo(boolean ifNotExists, boolean isExternal, boolean isTemp, String ctlName, String dbName,
             String tableName, List<ColumnDefinition> columns, List<IndexDefinition> indexes,
             String engineName, KeysType keysType, List<String> keys, String comment,
             PartitionTableInfo partitionTableInfo,
@@ -144,6 +145,7 @@ public class CreateTableInfo {
             List<String> clusterKeyColumnNames) {
         this.ifNotExists = ifNotExists;
         this.isExternal = isExternal;
+        this.isTemp = isTemp;
         this.ctlName = ctlName;
         this.dbName = dbName;
         this.tableName = tableName;
@@ -166,7 +168,7 @@ public class CreateTableInfo {
     /**
      * constructor for create table as select
      */
-    public CreateTableInfo(boolean ifNotExists, boolean isExternal, String ctlName, String dbName,
+    public CreateTableInfo(boolean ifNotExists, boolean isExternal, boolean isTemp, String ctlName, String dbName,
             String tableName, List<String> cols, String engineName, KeysType keysType,
             List<String> keys, String comment,
             PartitionTableInfo partitionTableInfo,
@@ -175,6 +177,7 @@ public class CreateTableInfo {
             List<String> clusterKeyColumnNames) {
         this.ifNotExists = ifNotExists;
         this.isExternal = isExternal;
+        this.isTemp = isTemp;
         this.ctlName = ctlName;
         this.dbName = dbName;
         this.tableName = tableName;
@@ -847,7 +850,7 @@ public class CreateTableInfo {
             }
         }
 
-        return new CreateTableStmt(ifNotExists, isExternal,
+        return new CreateTableStmt(ifNotExists, isExternal, isTemp,
                 new TableName(ctlName, dbName, tableName),
                 catalogColumns, catalogIndexes, engineName,
                 new KeysDesc(keysType, keys, clusterKeysColumnNames),
