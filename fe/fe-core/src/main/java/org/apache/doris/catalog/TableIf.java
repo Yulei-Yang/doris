@@ -537,7 +537,7 @@ public interface TableIf {
     }
 
     default boolean isManagedTable() {
-        return getType() == TableType.OLAP || getType() == TableType.MATERIALIZED_VIEW;
+        return getType() == TableType.OLAP || getType() == TableType.MATERIALIZED_VIEW || getType() == TableType.TEMP;
     }
 
     default long getDataSize(boolean singleReplica) {

@@ -196,7 +196,13 @@ public class ShowDataStmt extends ShowStmt implements NotFallbackInParser {
                     remoteSize = olapTable.getRemoteDataSize();
 
                     //|TableName|Size|ReplicaCount|RemoteSize
-                    List<Object> row = Arrays.asList(table.getName(), tableSize, replicaCount, remoteSize);
+                    List<Object> row;
+                    if (table.getType() == TableType.TEMP) {
+                        row = Arrays.asList(Util.getTempTableOuterName(table.getName()), tableSize,
+                            replicaCount, remoteSize);
+                    } else {
+                        row = Arrays.asList(table.getName(), tableSize, replicaCount, remoteSize);
+                    }
                     totalRowsObject.add(row);
 
                     totalSize += tableSize;
