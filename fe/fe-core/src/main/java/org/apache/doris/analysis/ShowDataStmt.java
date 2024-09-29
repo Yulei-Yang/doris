@@ -178,6 +178,10 @@ public class ShowDataStmt extends ShowStmt implements NotFallbackInParser {
                                     PrivPredicate.SHOW)) {
                         continue;
                     }
+                    if (table.getType() == TableType.TEMP && Util.getTempTableConnectionId(table.getName())
+                            != ConnectContext.get().getConnectionId()) {
+                        continue;
+                    }
                     sortedTables.add(table);
                 }
 

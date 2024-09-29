@@ -941,7 +941,11 @@ public class InternalCatalog implements CatalogIf<Database> {
                 }
             }
 
-            dropTableInternal(db, table, stmt.isForceDrop(), watch, costTimes);
+            if (table.getType() == TableType.TEMP) {
+                dropTableInternal(db, table, true, watch, costTimes);
+            } else {
+                dropTableInternal(db, table, stmt.isForceDrop(), watch, costTimes);
+            }
         } catch (UserException e) {
             throw new DdlException(e.getMessage(), e.getMysqlErrorCode());
         } finally {
