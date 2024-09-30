@@ -437,6 +437,8 @@ struct TQueryProfile {
 struct TFragmentInstanceReport {
   1: optional Types.TUniqueId fragment_instance_id;
   2: optional i32 num_finished_range;
+  3: optional i64 loaded_rows
+  4: optional i64 loaded_bytes
 }
 
 
@@ -1493,6 +1495,7 @@ struct TGetMetaDBMeta {
     3: optional list<TGetMetaTableMeta> tables
     4: optional list<i64> dropped_partitions
     5: optional list<i64> dropped_tables
+    6: optional list<i64> dropped_indexes
 }
 
 struct TGetMetaResult {
