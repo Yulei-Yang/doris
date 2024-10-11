@@ -439,6 +439,7 @@ public interface TableIf {
                 case ODBC:
                     return "Odbc";
                 case OLAP:
+                case TEMP:
                     return "Doris";
                 case SCHEMA:
                     return "SYSTEM VIEW";
@@ -491,6 +492,7 @@ public interface TableIf {
                 case VIEW:
                     return "VIEW";
                 case OLAP:
+                case TEMP:
                 case MYSQL:
                 case ODBC:
                 case BROKER:
