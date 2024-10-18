@@ -664,9 +664,12 @@ public class SessionVariable implements Serializable, Writable {
                                     "enable_adaptive_pipeline_task_serial_read_on_limit";
     public static final String ADAPTIVE_PIPELINE_TASK_SERIAL_READ_ON_LIMIT =
                                     "adaptive_pipeline_task_serial_read_on_limit";
+    public static final String REQUIRE_SEQUENCE_IN_INSERT = "require_sequence_in_insert";
 
     public static final String ENABLE_PHRASE_QUERY_SEQUENYIAL_OPT = "enable_phrase_query_sequential_opt";
 
+    public static final String ENABLE_COOLDOWN_REPLICA_AFFINITY =
+            "enable_cooldown_replica_affinity";
     /**
      * If set false, user couldn't submit analyze SQL and FE won't allocate any related resources.
      */
@@ -1150,7 +1153,7 @@ public class SessionVariable implements Serializable, Writable {
     public int sortPhaseNum = 0;
 
     @VariableMgr.VarAttr(name = HIVE_TEXT_COMPRESSION, needForward = true)
-    private String hiveTextCompression = "uncompressed";
+    private String hiveTextCompression = "plain";
 
     @VariableMgr.VarAttr(name = READ_CSV_EMPTY_LINE_AS_NULL, needForward = true,
             description = {"在读取csv文件时是否读取csv的空行为null",
@@ -2186,6 +2189,16 @@ public class SessionVariable implements Serializable, Writable {
         "enable optimization for conjunctions in sequential phrase queries"
     })
     public boolean enablePhraseQuerySequentialOpt = true;
+
+    @VariableMgr.VarAttr(name = REQUIRE_SEQUENCE_IN_INSERT, needForward = true, description = {
+            "该变量用于控制，使用了sequence列的unique key表，insert into操作是否要求必须提供每一行的sequence列的值",
+            "This variable controls whether the INSERT INTO operation on unique key tables with a sequence"
+                    + " column requires a sequence column to be provided for each row"
+    })
+    public boolean requireSequenceInInsert = true;
+
+    @VariableMgr.VarAttr(name = ENABLE_COOLDOWN_REPLICA_AFFINITY, needForward = true)
+    public boolean enableCooldownReplicaAffinity = true;
 
     public void setEnableEsParallelScroll(boolean enableESParallelScroll) {
         this.enableESParallelScroll = enableESParallelScroll;
@@ -3636,6 +3649,14 @@ public class SessionVariable implements Serializable, Writable {
         return this.enableSegmentCache;
     }
 
+    public void setRequireSequenceInInsert(boolean value) {
+        this.requireSequenceInInsert = value;
+    }
+
+    public boolean isRequireSequenceInInsert() {
+        return this.requireSequenceInInsert;
+    }
+
     /**
      * Serialize to thrift object.
      * Used for rest api.
@@ -4106,6 +4127,10 @@ public class SessionVariable implements Serializable, Writable {
     }
 
     public String hiveTextCompression() {
+        if (hiveTextCompression.equals("uncompressed")) {
+            // This is for compatibility.
+            return "plain";
+        }
         return hiveTextCompression;
     }
 
@@ -4359,5 +4384,9 @@ public class SessionVariable implements Serializable, Writable {
             default:
                 throw new IllegalArgumentException("Unknown serde dialect: " + serdeDialect);
         }
+    }
+
+    public boolean isEnableCooldownReplicaAffinity() {
+        return enableCooldownReplicaAffinity;
     }
 }

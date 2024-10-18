@@ -2387,6 +2387,11 @@ public class Config extends ConfigBase {
             "Whether to enable binlog feature"})
     public static boolean enable_feature_binlog = false;
 
+    @ConfField(mutable = false, description = {
+            "是否默认为 Database/Table 启用binlog特性",
+            "Whether to enable binlog feature for Database/Table by default"})
+    public static boolean force_enable_feature_binlog = false;
+
     @ConfField(mutable = false, masterOnly = false, varType = VariableAnnotation.EXPERIMENTAL, description = {
         "设置 binlog 消息最字节长度",
         "Set the maximum byte length of binlog message"})
@@ -2813,9 +2818,6 @@ public class Config extends ConfigBase {
             "Should the request content be logged before each request starts, specifically the query statements"})
     public static boolean enable_print_request_before_execution = false;
 
-    @ConfField(mutable = true)
-    public static boolean enable_cooldown_replica_affinity = true;
-
     @ConfField
     public static String spilled_profile_storage_path = System.getenv("LOG_DIR") + File.separator + "profile";
 
@@ -3055,6 +3057,9 @@ public class Config extends ConfigBase {
 
     @ConfField(mutable = true, masterOnly = true)
     public static int history_cloud_warm_up_job_keep_max_second = 7 * 24 * 3600;
+
+    @ConfField(mutable = true, masterOnly = true)
+    public static int max_active_cloud_warm_up_job = 10;
 
     @ConfField(mutable = true, masterOnly = true)
     public static int cloud_warm_up_timeout_second = 86400 * 30; // 30 days
