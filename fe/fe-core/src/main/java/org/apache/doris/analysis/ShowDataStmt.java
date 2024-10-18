@@ -171,6 +171,8 @@ public class ShowDataStmt extends ShowStmt implements NotFallbackInParser {
                     }
                 });
 
+                boolean isAdmin = Env.getCurrentEnv().getAccessManager()
+                        .checkGlobalPriv(ConnectContext.get(), PrivPredicate.ADMIN);
                 for (Table table : tables) {
                     if (!Env.getCurrentEnv().getAccessManager()
                             .checkTblPriv(ConnectContext.get(), InternalCatalog.INTERNAL_CATALOG_NAME, dbName,
@@ -178,9 +180,13 @@ public class ShowDataStmt extends ShowStmt implements NotFallbackInParser {
                                     PrivPredicate.SHOW)) {
                         continue;
                     }
-                    if (table.getType() == TableType.TEMP && Util.getTempTableConnectionId(table.getName())
-                            != ConnectContext.get().getConnectionId()) {
-                        continue;
+                    // admin users can see all temporary tables no matter they are created by any session
+                    if (!isAdmin) {
+                        // non admin user can only see temporary tables in current session
+                        if (table.isTemporary() && Util.getTempTableConnectionId(table.getName())
+                                != ConnectContext.get().getConnectionId()) {
+                            continue;
+                        }
                     }
                     sortedTables.add(table);
                 }
@@ -200,8 +206,9 @@ public class ShowDataStmt extends ShowStmt implements NotFallbackInParser {
                     remoteSize = olapTable.getRemoteDataSize();
 
                     //|TableName|Size|ReplicaCount|RemoteSize
+                    // for the sake of management, admin users will see internal table name of temporary table
                     List<Object> row;
-                    if (table.getType() == TableType.TEMP) {
+                    if (table.isTemporary() && !isAdmin) {
                         row = Arrays.asList(Util.getTempTableOuterName(table.getName()), tableSize,
                             replicaCount, remoteSize);
                     } else {
@@ -309,7 +316,7 @@ public class ShowDataStmt extends ShowStmt implements NotFallbackInParser {
                     String indexName = olapTable.getIndexNameById(indexId);
                     // .add("TableName").add("IndexName").add("Size").add("ReplicaCount").add("RowCount")
                     //      .add("RemoteSize")
-                    String tableShowName = olapTable.getType() == TableType.TEMP
+                    String tableShowName = olapTable.isTemporary()
                             ? Util.getTempTableOuterName(tableName.getTbl()) : tableName.getTbl();
                     List<Object> row = Arrays.asList(tableShowName, indexName, indexSize, indexReplicaCount,
                              indexRowCount, indexRemoteSize);
